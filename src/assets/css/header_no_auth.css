@@ -1,0 +1,31 @@
+
+.left-section img {
+    width: 50px;
+    height: 50px;
+}
+
+header {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.right-section {
+    width: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+a {
+    text-decoration: none;
+}
+
+.sign_up {
+    color: #18FFFF;
+}
+
+.login {
+    color: #fff;
+}

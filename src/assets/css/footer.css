@@ -1,0 +1,19 @@
+.line_footer {
+  height: 1px;
+  background-color: #ccc;
+  margin: 20px 0px;
+}
+
+.footer-icons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20px;
+  padding: 10px 150px;
+}
+
+.footer-icons img {
+  width: 40px;
+  height: 40px;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}

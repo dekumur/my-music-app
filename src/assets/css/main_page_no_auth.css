@@ -1,0 +1,160 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+
+@font-face {
+    font-family: "Inter-Bold";
+    src: url("../fronts/Inter_18pt-Bold.ttf")
+}
+
+@font-face {
+    font-family: "Inter-Regular";
+    src: url("../fronts/Inter_18pt-Regular.ttf")
+}
+
+@font-face {
+    font-family: "Inter-Medium";
+    src: url("../fronts/Inter_18pt-Medium.ttf")
+}
+
+body {
+    margin: 0 auto;
+    padding: 0;
+    background-color: black;
+    -webkit-font-smoothing: antialiased;  
+    -moz-osx-font-smoothing: grayscale;
+    font-family: "Inter-Regular";
+}
+
+.hero {
+  background-image: url('../images/banner.gif');
+  background-size: cover;
+  background-position: center;
+  padding: 120px 120px;
+  color: white;
+  border-radius: 15px;
+  max-width: 1000px;
+  margin: 40px auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 0;
+  border-radius: 15px;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  margin-left: -80px;
+}
+
+.hero h1 {
+  font-size: 2rem;
+  font-family: Inter-Bold;
+  margin-bottom: 20px;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  line-height: 1.2;
+  width: 700px;
+}
+
+.second_section {
+  margin-top: 100px;
+  color: white;
+  text-align: center;
+}
+
+.second_section h1 {
+    color: #18FFFF;
+    letter-spacing: 3px; 
+    margin-bottom: 30px;
+}
+
+button {
+  background-color: #fff;
+  color: #000;
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+button:hover {
+    background-color: #cccccc;
+}
+
+.third_section {
+    padding: 100px 210px 60px;
+}
+
+.third_section h1{
+    color: #fff;
+    letter-spacing: 2px; 
+    width: 500px;
+}
+
+.photo_artist img {
+    height: 410px;
+    margin-top: 50px;
+    transition: transform 0.3s ease
+}
+
+.photo_artist img:hover {
+    height: 410px;
+    margin-top: 50px;
+    transform: translateY(20px)
+}
+
+.photo_artist {
+    display: flex;
+    justify-content: center; 
+    flex-wrap: wrap;
+    gap: 40px;
+}
+
+.join-block {
+  background-color: #000;
+  color: #fff;
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.join-block h2 {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  letter-spacing: 3px; 
+}
+
+.join-block h2 span {
+  color: #00f2ff; 
+}
+
+.join-block p {
+  color: #aaa;
+  margin-bottom: 30px;
+  font-size: 14px;
+}
+
+.login-link {
+  font-size: 14px;
+  color: #ccc;
+}
+
+.login-link a {
+  color: #fff;
+  font-weight: bold;
+  text-decoration: none;
+  margin-left: 5px;
+}
