@@ -17,9 +17,8 @@
         </section>
         <section class="second_section">
           <h1>Откройте для себя то, что сейчас слушают все</h1>
-          <button>Популярное сейчас</button>
+          <button @click="goToPopular">Популярное сейчас</button>
         </section>
-      </main>
       <section class="third_section">
         <h1>Откройте для себя то, что сейчас слушают все</h1>
           <div class="photo_artist">
@@ -54,6 +53,7 @@
           <a href="#">Войти</a>
         </div>
       </section>
+    </main>
   </div>
     <AppFooter />
 </template>
@@ -77,7 +77,11 @@ export default {
       showRegister: false,
       showLogin: false
     }
+  },
+  methods: {
+    goToPopular () {
+      this.$router.push({ name: 'Popular' })
+    }
   }
-
 }
 </script>

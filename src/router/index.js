@@ -1,12 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../views/main_page_no_auth.vue'
+import PopularPage from '@/views/PopularPage.vue'
 
 const routes = [
-  {
-    path: '/',
-    name: 'home',
-    component: HomePage
-  }
+  { path: '/', name: 'Home', component: HomePage },
+  { path: '/popular', name: 'Popular', component: PopularPage }
 ]
 
 const router = createRouter({
