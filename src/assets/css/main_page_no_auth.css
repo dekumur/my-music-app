@@ -63,8 +63,8 @@ body {
 
 .hero p {
   font-size: 1.1rem;
-  line-height: 1.2;
-  width: 700px;
+  line-height: 1.4;
+  max-width: 100%;
 }
 
 .second_section {
@@ -204,4 +204,261 @@ button:hover {
   font-weight: bold;
   text-decoration: none;
   margin-left: 5px;
+}
+
+@media (max-width: 320px) {
+  .hero {
+    padding: 40px 20px;
+    border-radius: 10px;
+    max-width: 100%;
+    margin: 20px 10px;
+  }
+  .hero-content {
+    margin-left: 0;
+  }
+  .hero h1 {
+    font-size: 1.4rem;
+  }
+  .hero p {
+    font-size: 1rem;
+    width: 100%;
+  }
+  .second_section h1,
+  .third_section h1 {
+    font-size: 1.2rem;
+    width: 100%;
+  }
+  .third_section {
+    padding: 40px 20px 30px;
+  }
+  .photo_artist {
+    gap: 15px;
+  }
+  .artist {
+    height: 280px;
+  }
+  .artist img {
+    height: 260px;
+  }
+  .vertical-text {
+    font-size: 28px;
+  }
+  .join-block h2 {
+    font-size: 18px;
+  }
+  .join-block p,
+  .login-link {
+    font-size: 12px;
+  }
+}
+
+/* Маленькие экраны (375px) */
+@media (max-width: 375px) and (min-width: 321px) {
+  .hero {
+    padding: 60px 30px;
+    margin: 30px 15px;
+  }
+  .hero h1 {
+    font-size: 1.6rem;
+  }
+  .hero p {
+    font-size: 1.05rem;
+  }
+  .third_section {
+    padding: 50px 40px 40px;
+  }
+  .artist {
+    height: 320px;
+  }
+  .artist img {
+    height: 300px;
+  }
+  .vertical-text {
+    font-size: 35px;
+  }
+}
+
+/* Средние телефоны (425px) */
+@media (max-width: 425px) and (min-width: 376px) {
+  .hero {
+    padding: 80px 40px;
+    margin: 35px 20px;
+  }
+  .hero h1 {
+    font-size: 1.8rem;
+  }
+  .hero p {
+    font-size: 1.1rem;
+  }
+  .third_section {
+    padding: 40px 20px;
+  }
+
+  .third_section h1 {
+    width: 100%;
+    font-size: 20px;
+    text-align: center;
+  }
+
+  .photo_artist {
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .artist {
+    width: 90vw;
+    height: auto;
+  }
+
+  .artist img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+  }
+
+  .vertical-text {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 768px) {
+.artist {
+    width: 90%;
+    max-width: 360px;
+    height: auto;
+    aspect-ratio: 10 / 11;
+    overflow: hidden;
+    border-radius: 15px;
+  }
+
+  .artist img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .photo_artist {
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+  }
+
+  .vertical-text {
+    font-size: 32px;
+  }
+
+  .photo_artist {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .hero {
+    padding: 40px 20px;
+    margin: 20px 10px;
+  }
+
+  .hero-content {
+    margin-left: 0;
+  }
+
+  .hero h1 {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .hero p {
+    font-size: 1rem;
+    width: 100%;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .second_section h1 {
+    font-size: 1.2rem;
+    padding: 0 10px;
+  }
+
+  button {
+    width: 90%;
+    max-width: 300px;
+    font-size: 14px;
+  }
+
+  .third_section {
+    padding: 40px 10px;
+  }
+
+  .third_section h1 {
+    font-size: 1.2rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  .photo_artist {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 16px;
+    padding: 10px;
+    justify-content: flex-start;
+  }
+
+  .artist {
+    flex: 0 0 auto;
+    width: 180px; 
+    height:360px;
+    border-radius: 12px;
+  }
+
+  .artist img {
+    width: 100%;
+    height: auto;
+    object-fit: contain; 
+    display: block;
+    background-color: #000; 
+  }
+
+  .join-block h2 {
+    font-size: 1.2rem;
+  }
+
+  .join-block p {
+    font-size: 12px;
+    padding: 0 10px;
+  }
+
+  .login-link {
+    font-size: 12px;
+  }
+}
+
+/* Десктопы (1024px и больше) */
+@media (min-width: 1024px) {
+  .hero {
+    padding: 120px 120px;
+    margin: 40px auto;
+  }
+  .hero h1 {
+    font-size: 2rem;
+  }
+  .hero p {
+    font-size: 1.1rem;
+    width: 700px;
+  }
+  .third_section {
+    padding: 70px 210px 60px;
+  }
+  .artist {
+    height: 430px;
+  }
+  .artist img {
+    height: 410px;
+  }
+  .vertical-text {
+    font-size: 60px;
+  }
 }

@@ -1,7 +1,7 @@
 <template>
   <header>
-    <div class="left-section">
-      <img src="../assets/images/icon.png" alt="logo" />
+    <div class="left-section" @click="goHome" style="cursor:pointer;">
+      <img src="../assets/images/icon.png" alt="logo" @click="goHome" />
     </div>
     <div class="right-section">
       <a href="#" class="sign_up" @click.prevent="$emit('open-register')">Зарегистрироваться</a>
@@ -13,6 +13,11 @@
 <script>
 export default {
   name: 'AppHeader',
-  emits: ['open-register', 'open-login']
+  emits: ['open-register', 'open-login'],
+  methods: {
+    goHome () {
+      this.$router.push('/')
+    }
+  }
 }
 </script>

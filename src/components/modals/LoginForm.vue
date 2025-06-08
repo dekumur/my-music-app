@@ -1,4 +1,7 @@
 <template>
+    <div v-if="showAlert" :class="['alert-box', alertType]">
+      {{ alertMessage }}
+    </div>
   <div class="login-container">
     <form @submit.prevent="submitForm">
       <h2>Вход</h2>
@@ -15,22 +18,51 @@
 </template>
 
 <script>
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '@/assets/js/firebase'
+
 export default {
   name: 'LoginForm',
   data () {
     return {
       email: '',
-      password: ''
+      password: '',
+      showAlert: false,
+      alertMessage: '',
+      alertType: ''
     }
   },
   methods: {
     switchToRegister () {
       this.$emit('switch-to-register')
     },
-    submitForm () {
-      console.log('Форма отправлена')
-      console.log('Email:', this.email)
-      console.log('Password:', this.password)
+    async submitForm () {
+      try {
+        await signInWithEmailAndPassword(auth, this.email, this.password)
+        this.showCustomAlert('Вы успешно вошли!', 'success')
+
+        this.email = ''
+        this.password = ''
+
+        this.$emit('success')
+        this.$router.push('/main')
+      } catch (error) {
+        let msg = 'Ошибка входа.'
+        if (error.code === 'auth/user-not-found') {
+          msg = 'Пользователь не найден.'
+        } else if (error.code === 'auth/wrong-password') {
+          msg = 'Неверный пароль.'
+        }
+        this.showCustomAlert(msg, 'error')
+      }
+    },
+    showCustomAlert (message, type) {
+      this.alertMessage = message
+      this.alertType = type
+      this.showAlert = true
+      setTimeout(() => {
+        this.showAlert = false
+      }, 4000)
     }
   }
 }
@@ -38,13 +70,17 @@ export default {
 
 <style scoped>
 .login-container {
+  position: fixed;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background-color: #000;
   border-radius: 16px;
   padding: 30px;
   width: 300px;
-  margin: 0 auto;
   color: white;
   text-align: center;
+  z-index: 10000;
 }
 
 h2 {
@@ -71,7 +107,6 @@ button {
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  font-weight: bold;
 }
 
 a {
@@ -95,5 +130,33 @@ a:hover {
 .link-to-register a {
   display: inline-block;
   margin-top: 5px;
+}
+
+.alert-box {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 15px 25px;
+  border-radius: 10px;
+  z-index: 9999;
+  font-weight: bold;
+  font-size: 16px;
+  color: white;
+  animation: fadeInOut 4s ease forwards;
+}
+
+.alert-box.success {
+  background-color: #5fcacf;
+}
+
+.alert-box.error {
+  background-color: #dc3545;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  10%, 90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
 }
 </style>

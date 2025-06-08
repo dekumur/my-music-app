@@ -1,10 +1,15 @@
 <template>
-  <BaseModal :visible="showRegister" @close="closeRegister">
-    <RegisterForm @switch-to-login="switchToLogin" />
-  </BaseModal>
-  <BaseModal :visible="showLogin" @close="closeLogin">
-    <LoginForm @switch-to-register="switchToRegister" @forgot-password="switchToForgotPassword" />
-  </BaseModal>
+<BaseModal :visible="showLogin" @close="closeLogin">
+  <LoginForm
+    @switch-to-register="switchToRegister"
+    @forgot-password="switchToForgotPassword"
+    @success="closeLogin"
+  />
+</BaseModal>
+
+<BaseModal :visible="showRegister" @close="closeRegister">
+  <RegisterForm @switch-to-login="switchToLogin" @success="closeRegister" />
+</BaseModal>
   <BaseModal :visible="showForgotPassword" @close="closeForgotPassword">
     <ForgotPasswordForm @switch-to-login="switchToLogin" />
   </BaseModal>

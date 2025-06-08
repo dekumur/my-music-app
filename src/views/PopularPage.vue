@@ -204,12 +204,10 @@ export default {
         arrows: false,
         pagination: false,
         breakpoints: {
-          640: {
-            perPage: 1
-          },
-          1024: {
-            perPage: 2
-          }
+          480: { perPage: 1 },
+          768: { perPage: 2 },
+          1024: { perPage: 3 },
+          1280: { perPage: 4 }
         }
       }
     }
@@ -229,7 +227,7 @@ body {
     background-color: #0a0a0a;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-family: "Inter", sans-serif;
+    font-family: "Inter";
     color: #fff;
 }
 
@@ -293,4 +291,33 @@ p {
     justify-content: space-between;
 }
 
+@media (max-width: 768px) {
+  h1 {
+    font-size: 20px;
+    margin-bottom: 30px;
+  }
+  .popular_section {
+    margin: 30px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .popular_section {
+    margin: 20px 5px;
+    padding: 0 10px;
+  }
+  h1 {
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+  .slide-content {
+    padding: 10px;
+  }
+  p {
+    font-size: 16px;
+  }
+  .slide-content img {
+    max-width: 180px;
+  }
+}
 </style>

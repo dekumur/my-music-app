@@ -1,31 +1,58 @@
 <template>
   <div class="forgot_password-container">
-    <form>
+    <form @submit.prevent="resetPassword">
       <h2>Восстановление пароля</h2>
-      <input type="email" placeholder="Введите ваш email" required/>
-      <input placeholder="Пароль" type="password" required/>
-      <input placeholder="Подтверждение пароля" type="password" required/>
+      <input
+        type="email"
+        v-model="email"
+        placeholder="Введите ваш email"
+        required
+      />
       <button type="submit">Отправить</button>
     </form>
   </div>
 </template>
 
 <script>
+import { getAuth, sendPasswordResetEmail } from 'firebase/auth'
+
 export default {
   name: 'ForgotPassword',
+  data () {
+    return {
+      email: ''
+    }
+  },
+  methods: {
+    resetPassword () {
+      const auth = getAuth()
+      sendPasswordResetEmail(auth, this.email)
+        .then(() => {
+          alert('Письмо с восстановлением отправлено на почту.')
+          this.$emit('switch-to-login')
+        })
+        .catch((error) => {
+          alert('Ошибка: ' + error.message)
+        })
+    }
+  },
   emits: ['switch-to-login']
 }
 </script>
 
 <style scoped>
 .forgot_password-container {
+  position: fixed;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background-color: #000;
   border-radius: 16px;
   padding: 30px;
   width: 300px;
-  margin: 0 auto;
   color: white;
   text-align: center;
+  z-index: 10000;
 }
 
 h2 {
@@ -52,7 +79,6 @@ button {
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  font-weight: bold;
 }
 
 p {

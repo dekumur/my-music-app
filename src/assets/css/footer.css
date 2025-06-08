@@ -1,14 +1,15 @@
 .line_footer {
   height: 1px;
   background-color: #ccc;
-  margin: 20px 0px;
+  margin: 20px 0;
 }
 
+/* Основной стиль футера */
 .footer-icons {
   display: flex;
   justify-content: flex-end;
   gap: 20px;
-  padding: 10px 150px;
+  padding: 10px 40px;
 }
 
 .footer-icons img {
@@ -16,4 +17,46 @@
   height: 40px;
   transition: transform 0.2s ease;
   cursor: pointer;
+}
+
+/* Эффект при наведении */
+.footer-icons img:hover {
+  transform: scale(1.1);
+}
+
+/* Адаптив для экранов до 1024px */
+@media (max-width: 1024px) {
+  .footer-icons {
+    padding: 10px 30px;
+    gap: 16px;
+  }
+
+  .footer-icons img {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Для планшетов и телефонов (до 600px) */
+@media (max-width: 600px) {
+  .footer-icons {
+    padding: 10px 20px;
+    justify-content: center; /* Центрируем иконки на маленьких экранах */
+    gap: 12px;
+  }
+
+  .footer-icons img {
+    width: 28px;
+    height: 28px;
+    margin: 0 6px; /* Можно оставить для небольших отступов */
+  }
+}
+
+/* Для очень узких экранов (до 375px) */
+@media (max-width: 375px) {
+  .footer-icons img {
+    width: 24px;
+    height: 24px;
+    margin: 0 4px;
+  }
 }

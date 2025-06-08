@@ -1,24 +1,18 @@
 <template>
   <div>
-    <BaseModal :visible="showRegister" @close="showRegister = false">
-      <RegisterForm />
-    </BaseModal>
-    <BaseModal :visible="showLogin" @close="showLogin = false">
-      <LoginForm />
-    </BaseModal>
-      <main>
-        <section class="hero">
-          <div class="hero-content">
-            <h1>Исследуйте новое.<br>Находите вдохновение.</h1>
-            <p>
-              Это уникальное пространство, где слушатели и создатели объединяются, чтобы делиться музыкой и находить друг друга через звук.
-            </p>
-          </div>
-        </section>
-        <section class="second_section">
-          <h1>Откройте для себя то, что сейчас слушают все</h1>
-          <button @click="goToPopular">Популярное сейчас</button>
-        </section>
+    <main>
+      <section class="hero">
+        <div class="hero-content">
+          <h1>Исследуйте новое.<br>Находите вдохновение.</h1>
+          <p>
+            Это уникальное пространство, где слушатели и создатели объединяются, чтобы делиться музыкой и находить друг друга через звук.
+          </p>
+        </div>
+      </section>
+      <section class="second_section">
+        <h1>Откройте для себя то, что сейчас слушают все</h1>
+        <button @click="goToPopular">Популярное сейчас</button>
+      </section>
       <section class="third_section">
         <h1>Откройте для себя то, что сейчас слушают все</h1>
           <div class="photo_artist">
@@ -47,40 +41,32 @@
       <section class="join-block">
         <h2><span>Спасибо, что послушали.</span> Теперь присоединяйтесь.</h2>
         <p>Сохраняйте треки, следите за исполнителями и создавайте плейлисты. Всё бесплатно.</p>
-        <button>Зарегистрироваться</button>
+        <button @click="openRegister">Зарегистрироваться</button>
         <div class="login-link">
           <span>Уже есть аккаунт?</span>
-          <a href="#">Войти</a>
+          <a href="#" @click.prevent="openLogin">Войти</a>
         </div>
       </section>
     </main>
   </div>
-    <AppFooter />
+  <AppFooter />
 </template>
 
 <script>
 import AppFooter from '@/components/Footer.vue'
-import BaseModal from '@/components/modals/BaseModal.vue'
-import RegisterForm from '@/components/modals/RegisterForm.vue'
-import LoginForm from '@/components/modals/LoginForm.vue'
 
 export default {
   name: 'main_page_no_auth',
-  components: {
-    AppFooter,
-    BaseModal,
-    RegisterForm,
-    LoginForm
-  },
-  data () {
-    return {
-      showRegister: false,
-      showLogin: false
-    }
-  },
+  components: { AppFooter },
   methods: {
     goToPopular () {
       this.$router.push({ name: 'Popular' })
+    },
+    openRegister () {
+      this.$root.showRegister = true
+    },
+    openLogin () {
+      this.$root.showLogin = true
     }
   }
 }
