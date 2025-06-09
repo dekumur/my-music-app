@@ -18,46 +18,67 @@
 
       <p v-else>Нет рекомендаций для отображения.</p>
     </section>
+
     <div v-if="currentTrack" class="spotify-player">
-        <div class="player-left">
-          <button @click="prevTrack">⏮️</button>
-          <button @click="togglePlayPause">
-            <span v-if="isPlaying">⏸️</span>
-            <span v-else>▶️</span>
-          </button>
-          <button @click="nextTrack">⏭️</button>
-          <button>🔀</button>
-          <button>💬</button>
-        </div>
+      <div class="player-left">
+        <button class="icon-btn" @click="prevTrack">
+          <img src="@/assets/images/skip-back.svg" alt="Назад" />
+        </button>
 
-        <div class="player-center">
-          <span>{{ currentTimeDisplay }}</span>
-          <div class="progress-bar" @click="seek($event)">
-            <div class="progress" :style="{ width: progress + '%' }"></div>
-          </div>
-          <span>{{ durationDisplay }}</span>
-        </div>
+        <button class="play-btn" @click="togglePlayPause">
+          <img
+            :src="isPlaying ? require('@/assets/images/pause.svg') : require('@/assets/images/play.svg')"
+            :alt="isPlaying ? 'Пауза' : 'Играть'"
+          />
+        </button>
 
-        <div class="player-right">
-          <img :src="currentTrack.coverUrl" alt="cover" class="cover" />
-          <div class="info">
-            <p class="artist">{{ currentTrack.artist || 'Неизвестный' }}</p>
-            <p class="title">{{ formatTrackName(currentTrack.name) }}</p>
-          </div>
-          <button>❤️</button>
-          <button>👤</button>
-          <button>📃</button>
-        </div>
+        <button class="icon-btn" @click="nextTrack">
+          <img src="@/assets/images/skip-forward.svg" alt="Вперёд" />
+        </button>
 
-        <audio
-          ref="audio"
-          :src="currentTrack.audioUrl"
-          autoplay
-          @timeupdate="updateProgress"
-          @loadedmetadata="updateProgress"
-          @ended="onEnded"
-        ></audio>
+        <button
+          class="icon-btn"
+          :class="{ active: isShuffle }"
+          @click="toggleShuffle"
+        >
+          <img src="@/assets/images/shuffle.svg" alt="Перемешать" />
+        </button>
+
+        <button
+          class="icon-btn"
+          :class="{ active: isRepeat }"
+          @click="toggleRepeat"
+        >
+          <img src="@/assets/images/repeat.svg" alt="Повтор" />
+        </button>
       </div>
+      <div class="player-center">
+        <span>{{ currentTimeDisplay }}</span>
+        <div class="progress-bar" @click="seek($event)">
+          <div class="progress" :style="{ width: progress + '%' }"></div>
+        </div>
+        <span>{{ durationDisplay }}</span>
+      </div>
+      <div class="player-right">
+        <img :src="currentTrack.coverUrl" alt="cover" class="cover" />
+        <div class="info">
+          <p class="artist">{{ currentTrack.artist || 'Неизвестный' }}</p>
+          <p class="title">{{ formatTrackName(currentTrack.name) }}</p>
+        </div>
+        <button title="Лайк">❤️</button>
+        <button title="Профиль">👤</button>
+        <button title="Плейлист">📃</button>
+      </div>
+
+      <audio
+        ref="audio"
+        :src="currentTrack.audioUrl"
+        autoplay
+        @timeupdate="updateProgress"
+        @loadedmetadata="updateProgress"
+        @ended="onEnded"
+      ></audio>
+    </div>
   </main>
 </template>
 
@@ -65,13 +86,9 @@
 import { Splide, SplideSlide } from '@splidejs/vue-splide'
 import { db } from '@/assets/js/firebase'
 import { collection, getDocs } from 'firebase/firestore'
-
 export default {
   name: 'MainPage',
-  components: {
-    Splide,
-    SplideSlide
-  },
+  components: { Splide, SplideSlide },
   data () {
     return {
       recommendations: [],
@@ -83,9 +100,11 @@ export default {
       currentTime: 0,
       duration: 0,
       loading: true,
+      isShuffle: false,
+      isRepeat: false,
       splideOptions: {
         type: 'slide',
-        perPage: 4,
+        perPage: 5,
         perMove: 1,
         gap: '1rem',
         autoplay: true,
@@ -111,18 +130,13 @@ export default {
     }
   },
   methods: {
-    updateVolume () {
-      if (this.audio) {
-        this.audio.volume = this.volume
-      }
-    },
-    formatTrackName (name) {
-      return name ? name.replace(/[_-]/g, ' ') : ''
-    },
     formatTime (seconds) {
       const mins = Math.floor(seconds / 60)
       const secs = Math.floor(seconds % 60)
       return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    },
+    formatTrackName (name) {
+      return name ? name.replace(/[_-]/g, ' ') : ''
     },
     async playTrack (track) {
       if (this.audio) {
@@ -140,34 +154,71 @@ export default {
         this.audio = this.$refs.audio
         this.audio.play()
         this.isPlaying = true
+        this.updateVolume()
       })
     },
     togglePlayPause () {
       if (!this.audio) return
-      if (this.isPlaying) {
-        this.audio.pause()
-      } else {
-        this.audio.play()
-      }
+      this.isPlaying ? this.audio.pause() : this.audio.play()
       this.isPlaying = !this.isPlaying
     },
     updateProgress () {
       if (!this.audio) return
       this.currentTime = this.audio.currentTime
       this.duration = this.audio.duration
-      this.progress = (this.audio.currentTime / this.audio.duration) * 100
+      this.progress = (this.currentTime / this.duration) * 100
     },
     seek (event) {
       if (!this.audio || !this.audio.duration) return
       const rect = event.currentTarget.getBoundingClientRect()
       const clickX = event.clientX - rect.left
-      const width = rect.width
-      const ratio = clickX / width
+      const ratio = clickX / rect.width
       this.audio.currentTime = ratio * this.audio.duration
     },
     onEnded () {
-      this.isPlaying = false
-      this.progress = 0
+      if (this.isRepeat) {
+        this.audio.currentTime = 0
+        this.audio.play()
+        return
+      }
+
+      if (this.isShuffle) {
+        this.playRandomTrack()
+        return
+      }
+
+      this.nextTrack()
+    },
+    nextTrack () {
+      if (!this.currentTrack || !this.recommendations.length) return
+
+      const currentIndex = this.recommendations.findIndex(t => t.id === this.currentTrack.id)
+      const nextIndex = (currentIndex + 1) % this.recommendations.length
+      this.playTrack(this.recommendations[nextIndex])
+    },
+    prevTrack () {
+      if (!this.currentTrack || !this.recommendations.length) return
+
+      const currentIndex = this.recommendations.findIndex(t => t.id === this.currentTrack.id)
+      const prevIndex = (currentIndex - 1 + this.recommendations.length) % this.recommendations.length
+      this.playTrack(this.recommendations[prevIndex])
+    },
+    playRandomTrack () {
+      const otherTracks = this.recommendations.filter(t => t.id !== this.currentTrack?.id)
+      if (otherTracks.length === 0) return
+      const randomIndex = Math.floor(Math.random() * otherTracks.length)
+      this.playTrack(otherTracks[randomIndex])
+    },
+    toggleShuffle () {
+      this.isShuffle = !this.isShuffle
+    },
+    toggleRepeat () {
+      this.isRepeat = !this.isRepeat
+    },
+    updateVolume () {
+      if (this.audio) {
+        this.audio.volume = this.volume
+      }
     }
   },
   async mounted () {
@@ -180,7 +231,8 @@ export default {
           id: doc.id,
           name: data.title || data.name || '',
           coverUrl: data.cover_url || '',
-          audioUrl: data.audio_file_url || ''
+          audioUrl: data.audio_file_url || '',
+          artist: data.artist || 'Неизвестный'
         }
       })
     } catch (error) {
@@ -222,21 +274,20 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 10px;
+  padding: 5px;
 }
 
 .slide-content {
   background-color: #1e1e1e;
-  border-radius: 20px;
-  padding: 15px;
+  border-radius: 12px;
+  padding: 8px;
+  max-width: 180px;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
   text-align: center;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 img {
@@ -357,5 +408,50 @@ p {
   color: #ccc;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+}
+
+.icon-btn:hover {
+  opacity: 0.7;
+}
+
+.play-btn {
+ width: 80px;
+  height: 80px;
+  background-color: transparent;
+  border-radius: 0;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+.play-btn img,
+.icon-btn img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  filter: none;
+}
+
+.icon-btn.active img {
+fill: #18FFFF;
 }
 </style>
