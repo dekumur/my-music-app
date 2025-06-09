@@ -2,16 +2,62 @@
   <main>
     <section class="recently_dried">
       <h1>Больше того, что вы любите</h1>
-        <Splide v-if="recommendations.length" :options="splideOptions">
-          <SplideSlide v-for="track in recommendations" :key="track.id || track.name">
-            <div class="slide-content">
-              <img :src="track.coverUrl" :alt="formatTrackName(track.name)" />
-              <p>{{ formatTrackName(track.name) }}</p>
-            </div>
-          </SplideSlide>
-        </Splide>
+
+      <Splide v-if="recommendations.length" :options="splideOptions">
+        <SplideSlide
+          v-for="track in recommendations"
+          :key="track.id || track.name"
+          @click="playTrack(track)"
+        >
+          <div class="slide-content hoverable">
+            <img :src="track.coverUrl" :alt="formatTrackName(track.name)" />
+            <p>{{ formatTrackName(track.name) }}</p>
+          </div>
+        </SplideSlide>
+      </Splide>
+
       <p v-else>Нет рекомендаций для отображения.</p>
     </section>
+    <div v-if="currentTrack" class="spotify-player">
+        <div class="player-left">
+          <button @click="prevTrack">⏮️</button>
+          <button @click="togglePlayPause">
+            <span v-if="isPlaying">⏸️</span>
+            <span v-else>▶️</span>
+          </button>
+          <button @click="nextTrack">⏭️</button>
+          <button>🔀</button>
+          <button>💬</button>
+        </div>
+
+        <div class="player-center">
+          <span>{{ currentTimeDisplay }}</span>
+          <div class="progress-bar" @click="seek($event)">
+            <div class="progress" :style="{ width: progress + '%' }"></div>
+          </div>
+          <span>{{ durationDisplay }}</span>
+        </div>
+
+        <div class="player-right">
+          <img :src="currentTrack.coverUrl" alt="cover" class="cover" />
+          <div class="info">
+            <p class="artist">{{ currentTrack.artist || 'Неизвестный' }}</p>
+            <p class="title">{{ formatTrackName(currentTrack.name) }}</p>
+          </div>
+          <button>❤️</button>
+          <button>👤</button>
+          <button>📃</button>
+        </div>
+
+        <audio
+          ref="audio"
+          :src="currentTrack.audioUrl"
+          autoplay
+          @timeupdate="updateProgress"
+          @loadedmetadata="updateProgress"
+          @ended="onEnded"
+        ></audio>
+      </div>
   </main>
 </template>
 
@@ -29,6 +75,13 @@ export default {
   data () {
     return {
       recommendations: [],
+      currentTrack: null,
+      volume: 1,
+      audio: null,
+      isPlaying: true,
+      progress: 0,
+      currentTime: 0,
+      duration: 0,
       loading: true,
       splideOptions: {
         type: 'slide',
@@ -49,26 +102,89 @@ export default {
       }
     }
   },
+  computed: {
+    currentTimeDisplay () {
+      return this.formatTime(this.currentTime)
+    },
+    durationDisplay () {
+      return this.formatTime(this.duration)
+    }
+  },
   methods: {
+    updateVolume () {
+      if (this.audio) {
+        this.audio.volume = this.volume
+      }
+    },
     formatTrackName (name) {
-      if (!name) return ''
-      return name.replace(/[_-]/g, ' ')
+      return name ? name.replace(/[_-]/g, ' ') : ''
+    },
+    formatTime (seconds) {
+      const mins = Math.floor(seconds / 60)
+      const secs = Math.floor(seconds % 60)
+      return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    },
+    async playTrack (track) {
+      if (this.audio) {
+        this.audio.pause()
+      }
+
+      if (this.currentTrack && this.currentTrack.id === track.id) {
+        this.currentTrack = null
+        this.audio = null
+        return
+      }
+
+      this.currentTrack = track
+      this.$nextTick(() => {
+        this.audio = this.$refs.audio
+        this.audio.play()
+        this.isPlaying = true
+      })
+    },
+    togglePlayPause () {
+      if (!this.audio) return
+      if (this.isPlaying) {
+        this.audio.pause()
+      } else {
+        this.audio.play()
+      }
+      this.isPlaying = !this.isPlaying
+    },
+    updateProgress () {
+      if (!this.audio) return
+      this.currentTime = this.audio.currentTime
+      this.duration = this.audio.duration
+      this.progress = (this.audio.currentTime / this.audio.duration) * 100
+    },
+    seek (event) {
+      if (!this.audio || !this.audio.duration) return
+      const rect = event.currentTarget.getBoundingClientRect()
+      const clickX = event.clientX - rect.left
+      const width = rect.width
+      const ratio = clickX / width
+      this.audio.currentTime = ratio * this.audio.duration
+    },
+    onEnded () {
+      this.isPlaying = false
+      this.progress = 0
     }
   },
   async mounted () {
     try {
       const tracksRef = collection(db, 'Track')
-      const tracksSnapshot = await getDocs(tracksRef)
-      this.recommendations = tracksSnapshot.docs.map(doc => {
+      const snapshot = await getDocs(tracksRef)
+      this.recommendations = snapshot.docs.map(doc => {
         const data = doc.data()
         return {
           id: doc.id,
+          name: data.title || data.name || '',
           coverUrl: data.cover_url || '',
-          name: data.name || data.title || ''
+          audioUrl: data.audio_file_url || ''
         }
       })
-    } catch (err) {
-      console.error('Ошибка при загрузке из Firebase:', err)
+    } catch (error) {
+      console.error('Ошибка при загрузке треков:', error)
     } finally {
       this.loading = false
     }
@@ -147,5 +263,99 @@ p {
 .splide__track {
   display: flex;
   justify-content: space-between;
+}
+.spotify-player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #1a1a1a;
+  padding: 6px 16px;
+  color: white;
+  font-family: sans-serif;
+  border-top: 1px solid #333;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
+  height: 60px;
+  z-index: 1000;
+}
+
+.player-left button,
+.player-right button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.player-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.player-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 500px;
+  padding: 0 10px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 4px;
+  background: #444;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.progress {
+  height: 100%;
+  background: #18FFFF;
+  border-radius: 2px;
+  transition: width 0.2s;
+}
+
+.player-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 150px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.cover {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  max-width: 100px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.artist {
+  font-weight: 600;
+}
+
+.title {
+  color: #ccc;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
