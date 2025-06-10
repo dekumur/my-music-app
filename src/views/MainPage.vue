@@ -60,6 +60,22 @@
         <span>{{ durationDisplay }}</span>
       </div>
       <div class="player-right">
+        <div class="volume-control">
+          <button @click="toggleVolumeSlider" class="volume-icon">
+            🔊
+          </button>
+          <div v-if="showVolumeSlider" class="volume-slider-container">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              v-model="volume"
+              @input="updateVolume"
+              class="volume-slider-vertical"
+            />
+          </div>
+        </div>
         <img :src="currentTrack.coverUrl" alt="cover" class="cover" />
         <div class="info">
           <p class="artist">{{ currentTrack.artist || 'Неизвестный' }}</p>
@@ -85,7 +101,8 @@
 <script>
 import { Splide, SplideSlide } from '@splidejs/vue-splide'
 import { db } from '@/assets/js/firebase'
-import { collection, getDocs } from 'firebase/firestore'
+import { collection, getDocs, getDoc } from 'firebase/firestore'
+
 export default {
   name: 'MainPage',
   components: { Splide, SplideSlide },
@@ -95,6 +112,7 @@ export default {
       currentTrack: null,
       volume: 1,
       audio: null,
+      showVolumeSlider: false,
       isPlaying: true,
       progress: 0,
       currentTime: 0,
@@ -137,6 +155,9 @@ export default {
     },
     formatTrackName (name) {
       return name ? name.replace(/[_-]/g, ' ') : ''
+    },
+    toggleVolumeSlider () {
+      this.showVolumeSlider = !this.showVolumeSlider
     },
     async playTrack (track) {
       if (this.audio) {
@@ -225,16 +246,38 @@ export default {
     try {
       const tracksRef = collection(db, 'Track')
       const snapshot = await getDocs(tracksRef)
-      this.recommendations = snapshot.docs.map(doc => {
-        const data = doc.data()
+
+      const tracksWithArtists = await Promise.all(snapshot.docs.map(async (docSnap) => {
+        const data = docSnap.data()
+        console.log('Трек:', docSnap.id, data)
+
+        let artistName = 'Неизвестный'
+        const artistRef = data.artist_id
+
+        if (artistRef) {
+          console.log('artistRef:', artistRef)
+          try {
+            const artistDoc = await getDoc(artistRef)
+            if (artistDoc.exists()) {
+              artistName = artistDoc.data().name || 'Неизвестный'
+            }
+          } catch (err) {
+            console.error('Ошибка при получении артиста:', err)
+          }
+        } else {
+          console.warn(`В треке ${docSnap.id} нет artist_id`)
+        }
+
         return {
-          id: doc.id,
+          id: docSnap.id,
           name: data.title || data.name || '',
           coverUrl: data.cover_url || '',
           audioUrl: data.audio_file_url || '',
-          artist: data.artist || 'Неизвестный'
+          artist: artistName
         }
-      })
+      }))
+
+      this.recommendations = tracksWithArtists
     } catch (error) {
       console.error('Ошибка при загрузке треков:', error)
     } finally {
@@ -253,6 +296,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-family: "Inter", sans-serif;
   color: #fff;
+  padding-bottom: 80px;
 }
 
 .recently_dried {
@@ -315,143 +359,167 @@ p {
   display: flex;
   justify-content: space-between;
 }
+
 .spotify-player {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: #1a1a1a;
-  padding: 6px 16px;
-  color: white;
-  font-family: sans-serif;
-  border-top: 1px solid #333;
   position: fixed;
   bottom: 0;
-  width: 100%;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.4);
-  height: 60px;
+  left: 0;
+  right: 0;
   z-index: 1000;
-}
-
-.player-left button,
-.player-right button {
-  background: none;
-  border: none;
+  background-color: #121212;
   color: white;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  height: 50px;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.4);
 }
 
-.player-left {
+.player-left,
+.player-center,
+.player-right {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+}
+
+.player-left .icon-btn,
+.play-btn {
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin: 0 6px;
+  padding: 6px;
+  filter: brightness(0) invert(1);
+}
+
+.player-left .active {
+  opacity: 1;
 }
 
 .player-center {
   flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  max-width: 500px;
-  padding: 0 10px;
+  justify-content: center;
+  gap: 12px;
+}
+
+.player-center span {
+  font-size: 12px;
+  width: 36px;
+  text-align: center;
 }
 
 .progress-bar {
-  flex: 1;
+  position: relative;
+  background: #535353;
   height: 4px;
-  background: #444;
+  width: 100%;
+  max-width: 400px;
   border-radius: 2px;
   cursor: pointer;
 }
 
 .progress {
+  background: #00FFFF;
   height: 100%;
-  background: #18FFFF;
+  width: 0%;
   border-radius: 2px;
-  transition: width 0.2s;
 }
 
 .player-right {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: 150px;
-  flex-shrink: 0;
-  overflow: hidden;
+  gap: 12px;
+  min-width: 260px;
 }
 
-.cover {
-  width: 36px;
-  height: 36px;
+.player-right .cover {
+  width: 40px;
+  height: 40px;
   object-fit: cover;
   border-radius: 4px;
 }
 
-.info {
+.player-right .info {
   display: flex;
   flex-direction: column;
-  font-size: 11px;
-  max-width: 100px;
-  overflow: hidden;
+  justify-content: center;
   white-space: nowrap;
-  text-overflow: ellipsis;
-  line-height: 1.2;
+  overflow: hidden;
 }
 
-.artist {
-  font-weight: 600;
-}
-
-.title {
-  color: #ccc;
+.player-right .title {
+  font-weight: bold;
+  font-size: 14px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.icon-btn {
+.player-right .artist {
+  font-size: 12px;
+  color: #b3b3b3;
+}
+
+.player-right button {
   background: none;
   border: none;
-  padding: 6px;
+  color: white;
   cursor: pointer;
+  font-size: 16px;
+}
+
+.volume-control {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: opacity 0.2s ease;
 }
 
-.icon-btn:hover {
-  opacity: 0.7;
+.volume-icon {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
 }
 
-.play-btn {
- width: 80px;
+.volume-slider-container {
+  position: absolute;
+  bottom: 35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e1e1e;
+  padding: 6px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.volume-slider-vertical {
+  writing-mode: bt-lr;
+  -webkit-appearance: slider-vertical;
+  width: 4px;
   height: 80px;
-  background-color: transparent;
-  border-radius: 0;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: #fff;
+  border-radius: 2px;
+  cursor: pointer;
 }
 
-.play-btn:hover {
-  transform: scale(1.05);
-  opacity: 0.9;
+.volume-slider-vertical::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 10px;
+  width: 10px;
+  background: #00ffff;
+  border-radius: 20%;
+  cursor: pointer;
 }
 
-.play-btn img,
-.icon-btn img {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
-  pointer-events: none;
-  user-select: none;
-  filter: none;
-}
-
-.icon-btn.active img {
-fill: #18FFFF;
+.volume-slider-vertical::-moz-range-thumb {
+  height: 10px;
+  width: 10px;
+  background: #00ffff;
+  border-radius: 50%;
+  cursor: pointer;
 }
 </style>
