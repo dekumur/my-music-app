@@ -105,8 +105,6 @@ import { Splide, SplideSlide } from '@splidejs/vue-splide'
 import { db } from '@/assets/js/firebase'
 import { collection, getDocs, getDoc } from 'firebase/firestore'
 
-import { collection, getDocs, getDoc } from 'firebase/firestore'
-
 export default {
   name: 'MainPage',
   components: { Splide, SplideSlide },
@@ -116,7 +114,6 @@ export default {
       currentTrack: null,
       volume: 1,
       audio: null,
-      showVolumeSlider: false,
       showVolumeSlider: false,
       isPlaying: true,
       progress: 0,
@@ -160,9 +157,6 @@ export default {
     },
     formatTrackName (name) {
       return name ? name.replace(/[_-]/g, ' ') : ''
-    },
-    toggleVolumeSlider () {
-      this.showVolumeSlider = !this.showVolumeSlider
     },
     toggleVolumeSlider () {
       this.showVolumeSlider = !this.showVolumeSlider
@@ -276,40 +270,13 @@ export default {
           console.warn(`В треке ${docSnap.id} нет artist_id`)
         }
 
-
-      const tracksWithArtists = await Promise.all(snapshot.docs.map(async (docSnap) => {
-        const data = docSnap.data()
-        console.log('Трек:', docSnap.id, data)
-
-        let artistName = 'Неизвестный'
-        const artistRef = data.artist_id
-
-        if (artistRef) {
-          console.log('artistRef:', artistRef)
-          try {
-            const artistDoc = await getDoc(artistRef)
-            if (artistDoc.exists()) {
-              artistName = artistDoc.data().name || 'Неизвестный'
-            }
-          } catch (err) {
-            console.error('Ошибка при получении артиста:', err)
-          }
-        } else {
-          console.warn(`В треке ${docSnap.id} нет artist_id`)
-        }
-
         return {
-          id: docSnap.id,
           id: docSnap.id,
           name: data.title || data.name || '',
           coverUrl: data.cover_url || '',
           audioUrl: data.audio_file_url || '',
           artist: artistName
-          artist: artistName
         }
-      }))
-
-      this.recommendations = tracksWithArtists
       }))
 
       this.recommendations = tracksWithArtists
@@ -331,7 +298,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-family: "Inter", sans-serif;
   color: #fff;
-  padding-bottom: 80px;
   padding-bottom: 80px;
 }
 
@@ -395,12 +361,9 @@ p {
   justify-content: space-between;
 }
 
-
 .spotify-player {
   position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
   left: 0;
   right: 0;
   z-index: 1000;
@@ -412,27 +375,8 @@ p {
   padding: 12px 24px;
   height: 50px;
   box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.4);
-  background-color: #121212;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 24px;
-  height: 50px;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.4);
 }
 
-.player-left,
-.player-center,
-.player-right {
-  display: flex;
-  align-items: center;
-}
-
-.player-left .icon-btn,
-.play-btn {
-  width: 40px;
-  height: 40px;
 .player-left,
 .player-center,
 .player-right {
@@ -450,13 +394,8 @@ p {
   margin: 0 6px;
   padding: 6px;
   filter: brightness(0) invert(1);
-  margin: 0 6px;
-  padding: 6px;
-  filter: brightness(0) invert(1);
 }
 
-.player-left .active {
-  opacity: 1;
 .player-left .active {
   opacity: 1;
 }
@@ -471,24 +410,12 @@ p {
   font-size: 12px;
   width: 36px;
   text-align: center;
-  justify-content: center;
-  gap: 12px;
-}
-
-.player-center span {
-  font-size: 12px;
-  width: 36px;
-  text-align: center;
 }
 
 .progress-bar {
   position: relative;
   background: #535353;
-  position: relative;
-  background: #535353;
   height: 4px;
-  width: 100%;
-  max-width: 400px;
   width: 100%;
   max-width: 400px;
   border-radius: 2px;
@@ -497,9 +424,7 @@ p {
 
 .progress {
   background: #00FFFF;
-  background: #00FFFF;
   height: 100%;
-  width: 0%;
   width: 0%;
   border-radius: 2px;
 }
@@ -519,7 +444,6 @@ p {
   border-radius: 4px;
 }
 
-.player-right .info {
 .player-right .info {
   display: flex;
   flex-direction: column;
@@ -545,19 +469,18 @@ p {
   font-size: 16px;
   font-weight: bold;
   color: #fff;
+  margin-top: 5px;
 }
 
 .player-right .artist {
   font-size: 14px;
   color: #b3b3b3;
-  margin-bottom: 4px;
   margin-top: 40px;
 }
 
 .player-right button {
   background: none;
   border: none;
-  color: white;
   color: white;
   cursor: pointer;
   font-size: 16px;
