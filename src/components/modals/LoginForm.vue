@@ -1,7 +1,7 @@
 <template>
-    <div v-if="showAlert" :class="['alert-box', alertType]">
-      {{ alertMessage }}
-    </div>
+  <div v-if="showAlert" :class="['alert-box', alertType]">
+    {{ alertMessage }}
+  </div>
   <div class="login-container">
     <form @submit.prevent="submitForm">
       <h2>Вход</h2>
@@ -40,10 +40,8 @@ export default {
       try {
         await signInWithEmailAndPassword(auth, this.email, this.password)
         this.showCustomAlert('Вы успешно вошли!', 'success')
-
         this.email = ''
         this.password = ''
-
         this.$emit('success')
         this.$router.push('/main')
       } catch (error) {

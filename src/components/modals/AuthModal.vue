@@ -1,15 +1,16 @@
 <template>
-<BaseModal :visible="showLogin" @close="closeLogin">
-  <LoginForm
-    @switch-to-register="switchToRegister"
-    @forgot-password="switchToForgotPassword"
-    @success="closeLogin"
-  />
-</BaseModal>
+  <BaseModal :visible="showLogin" @close="closeLogin">
+    <LoginForm
+      @switch-to-register="switchToRegister"
+      @forgot-password="switchToForgotPassword"
+      @success="handleLoginSuccess"
+    />
+  </BaseModal>
 
-<BaseModal :visible="showRegister" @close="closeRegister">
-  <RegisterForm @switch-to-login="switchToLogin" @success="closeRegister" />
-</BaseModal>
+  <BaseModal :visible="showRegister" @close="closeRegister">
+    <RegisterForm @switch-to-login="switchToLogin" @success="handleRegisterSuccess" />
+  </BaseModal>
+
   <BaseModal :visible="showForgotPassword" @close="closeForgotPassword">
     <ForgotPasswordForm @switch-to-login="switchToLogin" />
   </BaseModal>
@@ -64,12 +65,13 @@ export default {
       this.$emit('close-login')
       this.$emit('open-forgot-password')
     },
-    toggleBodyScroll (isVisible) {
-      if (isVisible) {
-        document.body.style.overflow = 'hidden'
-      } else {
-        document.body.style.overflow = ''
-      }
+    handleLoginSuccess () {
+      this.$emit('close-login')
+      this.$router.push('/main')
+    },
+    handleRegisterSuccess () {
+      this.$emit('close-register')
+      this.$router.push('/main')
     }
   }
 }

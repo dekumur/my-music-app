@@ -4,14 +4,16 @@
       <img src="../assets/images/icon.png" alt="logo" @click="goHome" />
     </div>
     <div class="middle-section">
-        <div class="search-container">
-          <input type="text" id="music-search" placeholder="Поиск" class="search-input" autocomplete="off" onkeyup="searchMusic()" />
-        </div>
+      <div class="search-container">
+        <input type="text" id="music-search" placeholder="Поиск" class="search-input" autocomplete="off" onkeyup="searchMusic()" />
+      </div>
     </div>
     <div class="right-section">
       <a href="#" class="active">Главная</a>
       <a href="#">Библиотека</a>
       <img src="../assets/images/path.png" alt="logo">
+      <!-- Кнопка выхода -->
+      <button @click="logout" class="logout-button">Выход</button>
     </div>
   </header>
 </template>
@@ -40,25 +42,25 @@ export default {
 
 <style scoped>
 .search-container {
-    position: relative;
-    width: 360px;
-    background: #303030;
-    margin-left: 0;
-    border-radius: 10px;
+  position: relative;
+  width: 360px;
+  background: #303030;
+  margin-left: 0;
+  border-radius: 10px;
 }
 
 .search-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 3px;
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 3px;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 .middle-section {
@@ -71,21 +73,21 @@ export default {
 }
 
 .search-input {
-    width: 100%;
-    padding: 13px 20px;
-    font-size: 14px;
-    outline: none;
-    background: transparent;
-    color: white;
-    border: none;
+  width: 100%;
+  padding: 13px 20px;
+  font-size: 14px;
+  outline: none;
+  background: transparent;
+  color: white;
+  border: none;
 }
 
 .search-input::placeholder {
-    background: #878A91;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    opacity: 1;
+  background: #878A91;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 1;
 }
 
 .right-section img {
@@ -134,4 +136,22 @@ a {
 .right-section a:hover::after {
   transform: translateX(200%);
 }
+
+/* Стили для кнопки "Выход" */
+.logout-button {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 15px;
+  transition: background-color 0.3s ease;
+}
+
+.logout-button:hover {
+  background-color: #e60000;
+}
+
 </style>

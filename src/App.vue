@@ -2,19 +2,17 @@
   <div v-if="authReady">
     <AuthenticatedHeader v-if="user" @logout="logout" />
     <AppHeader v-else @open-register="showRegister = true" @open-login="showLogin = true" />
-
     <AuthModal
       :show-register="showRegister"
       :show-login="showLogin"
       :show-forgot-password="showForgotPassword"
-      @close-register="handleRegisterSuccess"
-      @close-login="showLogin = false"
-      @close-forgot-password="showForgotPassword = false"
+      @close-register="handleCloseRegister"
+      @close-login="handleCloseLogin"
+      @close-forgot-password="handleCloseForgotPassword"
       @open-register="showRegister = true"
       @open-login="showLogin = true"
       @open-forgot-password="showForgotPassword = true"
     />
-
     <router-view />
   </div>
 </template>
@@ -50,9 +48,14 @@ export default {
         this.$router.push('/')
       })
     },
-    handleRegisterSuccess () {
+    handleCloseRegister () {
       this.showRegister = false
-      this.$router.push('/main')
+    },
+    handleCloseLogin () {
+      this.showLogin = false
+    },
+    handleCloseForgotPassword () {
+      this.showForgotPassword = false
     }
   }
 }
