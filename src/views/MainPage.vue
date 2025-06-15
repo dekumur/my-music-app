@@ -1,22 +1,49 @@
 <template>
   <main>
+      <section v-if="recentTracks.length" class="recently_dried">
+        <h1>Недавно прослушанные</h1>
+        <Splide :options="splideOptions">
+          <SplideSlide
+            v-for="track in recentTracks"
+            :key="track.id"
+            @click="playTrack(track)"
+          >
+            <div class="slide-content hoverable">
+              <img :src="track.coverUrl" :alt="formatTrackName(track.name)" />
+              <p>{{ formatTrackName(track.name) }}</p>
+            </div>
+          </SplideSlide>
+        </Splide>
+      </section>
     <section class="recently_dried">
       <h1>Больше того, что вы любите</h1>
-
       <Splide v-if="recommendations.length" :options="splideOptions">
         <SplideSlide
           v-for="track in recommendations"
           :key="track.id || track.name"
-          @click="playTrack(track)"
-        >
+          @click="playTrack(track)">
           <div class="slide-content hoverable">
             <img :src="track.coverUrl" :alt="formatTrackName(track.name)" />
             <p>{{ formatTrackName(track.name) }}</p>
           </div>
         </SplideSlide>
       </Splide>
-
       <p v-else>Нет рекомендаций для отображения.</p>
+    </section>
+    <section class="recently_dried">
+      <h1>Любимые исполнители</h1>
+      <Splide v-if="favoriteArtists.length" :options="splideOptions">
+        <SplideSlide
+          v-for="artist in favoriteArtists"
+          :key="artist.id"
+        >
+          <router-link :to="`/artist/${artist.id}`" class="slide-content hoverable">
+            <img :src="artist.imageUrl || '/default-artist.png'" :alt="artist.name || 'Исполнитель'" />
+            <p>{{ artist.name || 'Без имени' }}</p>
+          </router-link>
+        </SplideSlide>
+      </Splide>
+      <p v-else>Нет любимых исполнителей.</p>
     </section>
 
     <div v-if="currentTrack" class="spotify-player">
@@ -27,7 +54,8 @@
 
         <button class="play-btn" @click="togglePlayPause">
           <img
-            :src="isPlaying ? require('@/assets/images/pause.svg') : require('@/assets/images/play.svg')"
+            :src="isPlaying ? require('@/assets/images/pause.svg')
+            : require('@/assets/images/play.svg')"
             :alt="isPlaying ? 'Пауза' : 'Играть'"
           />
         </button>
@@ -36,20 +64,11 @@
           <img src="@/assets/images/skip-forward.svg" alt="Вперёд" />
         </button>
 
-        <button
-          class="icon-btn"
-          :class="{ active: isShuffle }"
-          @click="toggleShuffle"
-        >
-          <img src="@/assets/images/shuffle.svg" alt="Перемешать" />
+        <button class="icon-btn" :class="{ active: isShuffle }" @click="toggleShuffle">
+          <i class="fas fa-random"></i>
         </button>
-
-        <button
-          class="icon-btn"
-          :class="{ active: isRepeat }"
-          @click="toggleRepeat"
-        >
-          <img src="@/assets/images/repeat.svg" alt="Повтор" />
+        <button class="icon-btn" :class="{ active: isRepeat }" @click="toggleRepeat">
+          <i class="fas fa-redo-alt"></i>
         </button>
       </div>
 
@@ -62,31 +81,51 @@
       </div>
 
       <div class="player-right">
-        <div class="volume-control">
-          <button @click="toggleVolumeSlider" class="volume-icon">
-            <img src="@/assets/images/volume.svg" alt="Громкость" />
-          </button>
-          <div v-if="showVolumeSlider" class="volume-slider-container">
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              v-model="volume"
-              @input="updateVolume"
-              class="volume-slider-vertical"
-            />
-          </div>
+      <div class="volume-control">
+        <button @click="toggleVolumeSlider" class="volume-icon">
+          <img src="@/assets/images/volume.svg" alt="Громкость" />
+        </button>
+        <div v-if="showVolumeSlider" class="volume-slider-container">
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            v-model="volume"
+            @input="updateVolume"
+            class="volume-slider-vertical"
+          />
         </div>
-        <img :src="currentTrack.coverUrl" alt="cover" class="cover" />
-        <div class="info">
-          <p class="artist">{{ currentTrack.artist || 'Неизвестный' }}</p>
-          <p class="title">{{ formatTrackName(currentTrack.name) }}</p>
-        </div>
-        <button title="Лайк">❤️</button>
-        <button title="Профиль">👤</button>
-        <button title="Плейлист">📃</button>
       </div>
+
+      <img :src="currentTrack.coverUrl" alt="cover" class="cover" />
+      <div class="info">
+        <p class="artist">{{ currentTrack.artist || 'Неизвестный' }}</p>
+        <p class="title">{{ formatTrackName(currentTrack.name) }}</p>
+      </div>
+
+      <button class="icon-btn" :class="{ active: isFavorite }" @click="toggleFavorite">
+        <i class="fas fa-heart"></i>
+      </button>
+      <div class="playlist-dropdown">
+        <button class="icon-btn" @click="showMenu = !showMenu">
+          <i class="fas fa-plus"></i>
+        </button>
+
+        <div v-if="showMenu" class="dropdown-menu">
+          <ul>
+            <li
+              v-for="playlist in playlists"
+              :key="playlist.id"
+              @click="addToPlaylist(playlist.id)"
+            >
+              {{ playlist.name }}
+            </li>
+            <li class="create-new" @click="createNewPlaylist">+ Новый плейлист</li>
+          </ul>
+        </div>
+      </div>
+    </div>
 
       <audio
         ref="audio"
@@ -98,19 +137,41 @@
       ></audio>
     </div>
   </main>
+  <AppFooter />
 </template>
 
 <script>
+import AppFooter from '@/components/Footer.vue'
 import { Splide, SplideSlide } from '@splidejs/vue-splide'
 import { db } from '@/assets/js/firebase'
-import { collection, getDocs, getDoc } from 'firebase/firestore'
+import { getAuth } from 'firebase/auth'
+import {
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  addDoc,
+  deleteDoc,
+  query,
+  where,
+  getDocs,
+  serverTimestamp
+} from 'firebase/firestore'
 
 export default {
   name: 'MainPage',
-  components: { Splide, SplideSlide },
+  components: { Splide, SplideSlide, AppFooter },
   data () {
     return {
       recommendations: [],
+      recentTracks: [],
+      favoriteArtists: [],
+      favoriteTrackIds: [],
+      playlists: [],
+      showMenu: false,
+      isInPlaylist: false,
+      isRepeat: false,
+      isShuffle: false,
       currentTrack: null,
       volume: 1,
       audio: null,
@@ -120,8 +181,6 @@ export default {
       currentTime: 0,
       duration: 0,
       loading: true,
-      isShuffle: false,
-      isRepeat: false,
       splideOptions: {
         type: 'slide',
         perPage: 5,
@@ -147,9 +206,16 @@ export default {
     },
     durationDisplay () {
       return this.formatTime(this.duration)
+    },
+    isFavorite () {
+      return this.currentTrack && this.favoriteTrackIds.includes(this.currentTrack.id)
     }
   },
   methods: {
+    getUserId () {
+      const auth = getAuth()
+      return auth.currentUser ? auth.currentUser.uid : null
+    },
     formatTime (seconds) {
       const mins = Math.floor(seconds / 60)
       const secs = Math.floor(seconds % 60)
@@ -161,24 +227,19 @@ export default {
     toggleVolumeSlider () {
       this.showVolumeSlider = !this.showVolumeSlider
     },
-    async playTrack (track) {
+    togglePlaylist () {
+      this.isInPlaylist = !this.isInPlaylist
+    },
+    toggleShuffle () {
+      this.isShuffle = !this.isShuffle
+    },
+    toggleRepeat () {
+      this.isRepeat = !this.isRepeat
+    },
+    updateVolume () {
       if (this.audio) {
-        this.audio.pause()
+        this.audio.volume = this.volume
       }
-
-      if (this.currentTrack && this.currentTrack.id === track.id) {
-        this.currentTrack = null
-        this.audio = null
-        return
-      }
-
-      this.currentTrack = track
-      this.$nextTick(() => {
-        this.audio = this.$refs.audio
-        this.audio.play()
-        this.isPlaying = true
-        this.updateVolume()
-      })
     },
     togglePlayPause () {
       if (!this.audio) return
@@ -204,72 +265,217 @@ export default {
         this.audio.play()
         return
       }
-
-      if (this.isShuffle) {
-        this.playRandomTrack()
-        return
-      }
-
-      this.nextTrack()
+      this.isShuffle ? this.playRandomTrack() : this.nextTrack()
     },
     nextTrack () {
       if (!this.currentTrack || !this.recommendations.length) return
-
       const currentIndex = this.recommendations.findIndex(t => t.id === this.currentTrack.id)
       const nextIndex = (currentIndex + 1) % this.recommendations.length
       this.playTrack(this.recommendations[nextIndex])
     },
     prevTrack () {
       if (!this.currentTrack || !this.recommendations.length) return
-
       const currentIndex = this.recommendations.findIndex(t => t.id === this.currentTrack.id)
       const prevIndex = (currentIndex - 1 + this.recommendations.length) % this.recommendations.length
       this.playTrack(this.recommendations[prevIndex])
     },
     playRandomTrack () {
       const otherTracks = this.recommendations.filter(t => t.id !== this.currentTrack?.id)
-      if (otherTracks.length === 0) return
+      if (!otherTracks.length) return
       const randomIndex = Math.floor(Math.random() * otherTracks.length)
       this.playTrack(otherTracks[randomIndex])
     },
-    toggleShuffle () {
-      this.isShuffle = !this.isShuffle
-    },
-    toggleRepeat () {
-      this.isRepeat = !this.isRepeat
-    },
-    updateVolume () {
-      if (this.audio) {
-        this.audio.volume = this.volume
+    async playTrack (track) {
+      if (this.audio) this.audio.pause()
+      if (this.currentTrack?.id === track.id) {
+        this.currentTrack = null
+        this.audio = null
+        return
       }
+      this.currentTrack = track
+      this.$nextTick(() => {
+        this.audio = this.$refs.audio
+        this.audio.play()
+        this.isPlaying = true
+        this.updateVolume()
+      })
+      await this.addToRecentlyPlayed(track.id)
+    },
+    async toggleFavorite () {
+      const userId = this.getUserId()
+      const trackId = this.currentTrack?.id
+      if (!userId || !trackId) return
+
+      const favRef = collection(db, 'Favorite_Tracks')
+      const q = query(favRef, where('user_id', '==', userId), where('track_id', '==', trackId))
+      const snapshot = await getDocs(q)
+
+      if (!snapshot.empty) {
+        const docId = snapshot.docs[0].id
+        await deleteDoc(doc(db, 'Favorite_Tracks', docId))
+        this.favoriteTrackIds = this.favoriteTrackIds.filter(id => id !== trackId)
+      } else {
+        await addDoc(favRef, {
+          user_id: userId,
+          track_id: trackId,
+          added_at: serverTimestamp()
+        })
+        this.favoriteTrackIds.push(trackId)
+      }
+    },
+    async addToRecentlyPlayed (trackId) {
+      const userId = this.getUserId()
+      if (!userId) return
+      const historyRef = collection(db, 'Listening_History')
+      const q = query(historyRef, where('user_id', '==', userId), where('track_id', '==', trackId))
+      const snapshot = await getDocs(q)
+
+      if (!snapshot.empty) {
+        const docId = snapshot.docs[0].id
+        await setDoc(doc(db, 'Listening_History', docId), {
+          user_id: userId,
+          track_id: trackId,
+          played_at: serverTimestamp()
+        }, { merge: true })
+        return
+      }
+
+      const userSnapshot = await getDocs(query(historyRef, where('user_id', '==', userId)))
+      if (userSnapshot.size >= 7) {
+        const sorted = userSnapshot.docs
+          .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
+          .sort((a, b) => (a.played_at?.seconds || 0) - (b.played_at?.seconds || 0))
+        const oldest = sorted[0]
+        await setDoc(doc(db, 'Listening_History', oldest.id), {
+          user_id: userId,
+          track_id: trackId,
+          played_at: serverTimestamp()
+        }, { merge: true })
+        return
+      }
+
+      await addDoc(historyRef, {
+        user_id: userId,
+        track_id: trackId,
+        played_at: serverTimestamp()
+      })
+    },
+    async fetchRecentlyPlayed () {
+      const userId = this.getUserId()
+      if (!userId) return
+
+      const historyRef = collection(db, 'Listening_History')
+      const snapshot = await getDocs(query(historyRef, where('user_id', '==', userId)))
+      const artistCache = {}
+
+      const recentPromises = snapshot.docs.map(async (docSnap) => {
+        const data = docSnap.data()
+        const trackDoc = await getDoc(doc(db, 'Track', data.track_id))
+        if (!trackDoc.exists()) return null
+
+        const track = trackDoc.data()
+        let artistName = 'Неизвестный'
+        const artistRef = track.artist_id
+        if (artistRef) {
+          const artistKey = artistRef.path
+          if (artistCache[artistKey]) {
+            artistName = artistCache[artistKey]
+          } else {
+            const artistDoc = await getDoc(artistRef)
+            if (artistDoc.exists()) {
+              artistName = artistDoc.data().name || 'Неизвестный'
+              artistCache[artistKey] = artistName
+            }
+          }
+        }
+
+        return {
+          id: data.track_id,
+          name: track.title || track.name || '',
+          coverUrl: track.cover_url || '',
+          audioUrl: track.audio_file_url || '',
+          artist: artistName,
+          played_at: data.played_at
+        }
+      })
+
+      const recent = (await Promise.all(recentPromises)).filter(Boolean)
+      this.recentTracks = recent.sort((a, b) => b.played_at.seconds - a.played_at.seconds)
+    },
+    async fetchFavoriteArtists () {
+      const userId = this.getUserId()
+      if (!userId) return
+
+      const snapshot = await getDocs(query(collection(db, 'Favorite_Artists'), where('user_id', '==', userId)))
+      const artistPromises = snapshot.docs.map(async (docSnap) => {
+        const artistRef = docSnap.data().artist_id
+        if (!artistRef) return null
+        const artistDoc = await getDoc(artistRef)
+        if (!artistDoc.exists()) return null
+        const artist = artistDoc.data()
+        return {
+          id: artistDoc.id,
+          name: artist.name || 'Неизвестный',
+          imageUrl: artist.photo_url || ''
+        }
+      })
+
+      this.favoriteArtists = (await Promise.all(artistPromises)).filter(Boolean)
+    },
+    async fetchFavoriteTracks () {
+      const userId = this.getUserId()
+      if (!userId) return
+      const snapshot = await getDocs(query(collection(db, 'Favorite_Tracks'), where('user_id', '==', userId)))
+      this.favoriteTrackIds = snapshot.docs.map(docSnap => docSnap.data().track_id)
+    },
+    async fetchPlaylists () {
+      const userId = this.getUserId()
+      if (!userId) return
+      const snapshot = await getDocs(collection(db, 'Playlists'))
+      this.playlists = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(p => p.user_id === userId)
+    },
+    async addToPlaylist (playlistId) {
+      try {
+        const userId = this.getUserId()
+        if (!userId || !this.currentTrack) return
+        const trackRef = doc(db, 'Playlists', playlistId, 'Tracks', this.currentTrack.id)
+        await setDoc(trackRef, {
+          ...this.currentTrack,
+          addedAt: Date.now(),
+          user_id: userId
+        })
+        this.showMenu = false
+      } catch (error) {
+        console.error('Ошибка при добавлении трека в плейлист:', error)
+      }
+    },
+    async createNewPlaylist () {
+      const name = prompt('Введите имя нового плейлиста:')
+      if (!name) return
+      const userId = this.getUserId()
+      const newDoc = await addDoc(collection(db, 'Playlists'), {
+        name,
+        user_id: userId,
+        createdAt: Date.now()
+      })
+      await this.addToPlaylist(newDoc.id)
+      await this.fetchPlaylists()
     }
   },
   async mounted () {
     try {
-      const tracksRef = collection(db, 'Track')
-      const snapshot = await getDocs(tracksRef)
-
+      const snapshot = await getDocs(collection(db, 'Track'))
       const tracksWithArtists = await Promise.all(snapshot.docs.map(async (docSnap) => {
         const data = docSnap.data()
-        console.log('Трек:', docSnap.id, data)
-
         let artistName = 'Неизвестный'
-        const artistRef = data.artist_id
-
-        if (artistRef) {
-          console.log('artistRef:', artistRef)
-          try {
-            const artistDoc = await getDoc(artistRef)
-            if (artistDoc.exists()) {
-              artistName = artistDoc.data().name || 'Неизвестный'
-            }
-          } catch (err) {
-            console.error('Ошибка при получении артиста:', err)
+        if (data.artist_id) {
+          const artistDoc = await getDoc(data.artist_id)
+          if (artistDoc.exists()) {
+            artistName = artistDoc.data().name || 'Неизвестный'
           }
-        } else {
-          console.warn(`В треке ${docSnap.id} нет artist_id`)
         }
-
         return {
           id: docSnap.id,
           name: data.title || data.name || '',
@@ -278,10 +484,13 @@ export default {
           artist: artistName
         }
       }))
-
       this.recommendations = tracksWithArtists
+      await this.fetchFavoriteTracks()
+      await this.fetchRecentlyPlayed()
+      await this.fetchFavoriteArtists()
+      await this.fetchPlaylists()
     } catch (error) {
-      console.error('Ошибка при загрузке треков:', error)
+      console.error('Ошибка при загрузке данных:', error)
     } finally {
       this.loading = false
     }
@@ -385,6 +594,18 @@ p {
 }
 
 .player-left .icon-btn,
+.play-btn {
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin: 0 6px;
+  padding: 6px;
+  filter: brightness(0) invert(1);
+}
+
+.player-right .icon-btn,
 .play-btn {
   width: 40px;
   height: 40px;
@@ -572,4 +793,50 @@ p {
   border-radius: 3px;
 }
 
+.icon-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 20px;
+  margin: 0 6px;
+  transition: color 0.3s ease;
+}
+
+.icon-btn.active {
+  filter: brightness(1.5);
+  color: #00bcd4;
+  transition: all 0.3s ease;
+}
+
+.playlist-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  background: rgb(0, 0, 0);
+  border: 1px solid #ccc;
+  padding: 6px 0;
+  right: 0;
+  top: -100px;
+  z-index: 100;
+  min-width: 160px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dropdown-menu li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.dropdown-menu li:hover {
+  background-color: #242424;
+}
 </style>
