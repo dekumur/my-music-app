@@ -6,6 +6,9 @@
       <div class="artist-info">
         <img :src="artist.photo_url || '/default-artist.png'" class="avatar" alt="Artist" />
         <h1>{{ artist.name }}</h1>
+        <button @click="toggleFollow" class="follow-btn">
+          {{ isFollowing ? 'Отписаться' : 'Подписаться' }}
+        </button>
       </div>
       <div class="tabs">
         <button :class="{ active: activeTab === 'tracks' }" @click="activeTab = 'tracks'">Треки</button>
@@ -115,15 +118,6 @@
         </div>
       </div>
     </div>
-
-    <audio
-      ref="audio"
-      :src="currentTrack.audioUrl"
-      autoplay
-      @timeupdate="updateProgress"
-      @loadedmetadata="updateProgress"
-      @ended="onEnded"
-    ></audio>
   </div>
 
   <AppFooter />
@@ -148,6 +142,7 @@ export default {
       showMenu: false,
       playlists: [],
       showDropdown: false,
+      isFollowing: false,
       isShuffle: false,
       currentTrack: null,
       volume: 1,
@@ -403,6 +398,39 @@ export default {
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter(p => p.user_id === userId)
     },
+    async checkIfFollowing () {
+      const userId = this.getUserId()
+      if (!userId || !this.artist?.id) return
+
+      const favRef = collection(db, 'Favorite_Artists')
+      const q = query(favRef, where('user_id', '==', userId), where('artist_id', '==', this.artist.id))
+      const snapshot = await getDocs(q)
+
+      this.isFollowing = !snapshot.empty
+    },
+    async toggleFollow () {
+      const userId = this.getUserId()
+      if (!userId || !this.artist?.id) return
+
+      const favRef = collection(db, 'Favorite_Artists')
+      const q = query(favRef, where('user_id', '==', userId), where('artist_id', '==', this.artist.id))
+      const snapshot = await getDocs(q)
+
+      if (!snapshot.empty) {
+        // Уже подписан — отписываемся
+        const docId = snapshot.docs[0].id
+        await deleteDoc(doc(db, 'Favorite_Artists', docId))
+        this.isFollowing = false
+      } else {
+        // Не подписан — подписываемся
+        await addDoc(favRef, {
+          user_id: userId,
+          artist_id: this.artist.id,
+          followed_at: serverTimestamp()
+        })
+        this.isFollowing = true
+      }
+    },
     async addToPlaylist (playlistId) {
       try {
         const userId = this.getUserId()
@@ -445,15 +473,16 @@ export default {
       }
     }
   },
-  mounted () {
+  async mounted () {
     this.audio = new Audio()
     this.audio.addEventListener('timeupdate', this.updateProgress)
     this.audio.addEventListener('ended', this.onEnded)
     this.audio.volume = this.volume
 
-    this.loadArtistData()
-    this.fetchFavoriteTracks()
-    this.fetchPlaylists()
+    await this.loadArtistData()
+    await this.checkIfFollowing()
+    await this.fetchFavoriteTracks()
+    await this.fetchPlaylists()
   },
   beforeUnmount () {
     if (this.audio) {
