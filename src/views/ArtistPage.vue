@@ -1,6 +1,5 @@
 <template>
   <AppHeader />
-
   <div v-if="artist" class="artist-page">
     <div class="artist-header">
       <div class="artist-info">

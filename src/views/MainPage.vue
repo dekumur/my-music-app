@@ -839,4 +839,51 @@ p {
 .dropdown-menu li:hover {
   background-color: #242424;
 }
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 20px;
+  margin: 0 6px;
+  transition: color 0.3s ease;
+}
+
+.icon-btn.active {
+  filter: brightness(1.5);
+  color: #00bcd4;
+  transition: all 0.3s ease;
+}
+
+.playlist-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  background: rgb(0, 0, 0);
+  border: 1px solid #ccc;
+  padding: 6px 0;
+  right: 0;
+  top: -100px;
+  z-index: 100;
+  min-width: 160px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dropdown-menu li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.dropdown-menu li:hover {
+  background-color: #242424;
+}
 </style>

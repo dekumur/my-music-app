@@ -4,13 +4,15 @@ import PopularPage from '@/views/PopularPage.vue'
 import MainPage from '@/views/MainPage.vue'
 import ArtistPage from '@/views/ArtistPage.vue'
 import LibraryPage from '@/views/Library.vue'
+import PlaylistPage from '@/views/PlaylistPage.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: HomePage },
   { path: '/popular', name: 'Popular', component: PopularPage },
   { path: '/main', name: 'Main', component: MainPage },
   { path: '/artist/:id', name: 'ArtistPage', component: ArtistPage },
-  { path: '/library', name: 'LibraryPage', component: LibraryPage }
+  { path: '/library', name: 'LibraryPage', component: LibraryPage },
+  { path: '/playlist/:id', name: 'PlaylistPage', component: PlaylistPage }
 ]
 
 const router = createRouter({

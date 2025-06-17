@@ -24,9 +24,28 @@
           </SplideSlide>
         </Splide>
     </section>
-
+        <section class="recently_dried">
+        <div class="section-header">
+          <h1>Мои плейлисты</h1>
+          <button @click="createNewPlaylist" class="add-playlist-btn">
+            <i class="fas fa-plus"></i> Создать
+          </button>
+        </div>
+        <Splide v-if="Array.isArray(playlists) && playlists.length" :options="splideOptions">
+          <SplideSlide
+            v-for="playlist in playlists"
+            :key="playlist.id"
+          >
+            <router-link :to="`/playlist/${playlist.id}`" class="slide-content hoverable">
+              <img :src="playlist.coverUrl || '/default-playlist.png'" :alt="playlist.name || 'Плейлист'" />
+              <p>{{ playlist.name || 'Без названия' }}</p>
+            </router-link>
+          </SplideSlide>
+        </Splide>
+        <p v-else>У вас пока нет плейлистов.</p>
+      </section>
       <section class="recently_dried">
-        <h1>Избранные</h1>
+        <h1>Любимые исполнители</h1>
       <Splide v-if="Array.isArray(favoriteArtists) && favoriteArtists.length" :options="splideOptions">
         <SplideSlide
           v-for="artist in favoriteArtists"
@@ -42,16 +61,17 @@
     </section>
 
     <section class="recently_dried">
+      <h1>Избранное</h1>
     <Splide v-if="Array.isArray(favoriteTracks) && favoriteTracks.length" :options="splideOptions">
-        <SplideSlide
+      <SplideSlide
         v-for="track in favoriteTracks"
         :key="track.id"
-        >
-        <router-link :to="`/track/${track.track_id}`" class="slide-content hoverable">
-            <img :src="track.imageUrl || '/default-track.png'" :alt="track.name || 'Трек'" />
-            <p>{{ track.name || 'Без названия' }}</p>
-        </router-link>
-        </SplideSlide>
+        @click="playTrack(track)">
+        <div class="slide-content hoverable">
+          <img :src="track.coverUrl || '/default-track.png'" :alt="track.name || 'Трек'" />
+          <p>{{ track.name || 'Без названия' }}</p>
+        </div>
+      </SplideSlide>
     </Splide>
     <p v-else>Нет любимых треков.</p>
     </section>
@@ -172,9 +192,10 @@ export default {
       recommendations: [],
       recentTracks: [],
       favoriteArtists: [],
-      favoriteTrackIds: [],
+      favoriteTracks: [],
       playlists: [],
       showMenu: false,
+      showDropdown: false,
       activeTab: 'review',
       isRepeat: false,
       isShuffle: false,
@@ -222,6 +243,22 @@ export default {
     }
   },
   methods: {
+    async playPlaylist (playlistId) {
+      try {
+        const tracksSnapshot = await getDocs(collection(db, 'Playlists', playlistId, 'Tracks'))
+        if (tracksSnapshot.empty) return
+
+        const tracks = tracksSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+
+        this.setPlaylist(tracks)
+        this.playTrack(tracks[0])
+      } catch (error) {
+        console.error('Ошибка при воспроизведении плейлиста:', error)
+      }
+    },
     formatTime (seconds = 0) {
       const mins = Math.floor(seconds / 60)
       const secs = Math.floor(seconds % 60)
@@ -263,6 +300,9 @@ export default {
 
     toggleShuffle () {
       this.isShuffle = !this.isShuffle
+    },
+    toggleDropdown () {
+      this.showMenu = !this.showMenu
     },
 
     onEnded () {
@@ -334,7 +374,37 @@ export default {
         this.favoriteTrackIds.push(this.currentTrack.id)
       }
     },
+    async fetchPlaylists () {
+      if (!this.userId) return
 
+      this.isPlaylistsLoaded = false
+      try {
+        const q = query(collection(db, 'Playlists'), where('user_id', '==', this.userId))
+        const snapshot = await getDocs(q)
+
+        this.playlists = await Promise.all(snapshot.docs.map(async (doc) => {
+          const playlistData = doc.data()
+          const tracksSnapshot = await getDocs(collection(db, 'Playlists', doc.id, 'Tracks'))
+          const trackCount = tracksSnapshot.size
+
+          const firstTrack = tracksSnapshot.docs[0]?.data()
+          const coverUrl = firstTrack?.coverUrl || '/default-playlist.png'
+
+          return {
+            id: doc.id,
+            name: playlistData.name,
+            coverUrl,
+            trackCount,
+            ...playlistData
+          }
+        }))
+      } catch (error) {
+        console.error('Ошибка при загрузке плейлистов:', error)
+        this.playlists = []
+      } finally {
+        this.isPlaylistsLoaded = true
+      }
+    },
     async addToRecentlyPlayed (trackId) {
       if (!this.userId) return
 
@@ -433,18 +503,40 @@ export default {
 
     async fetchFavoriteTracks () {
       if (!this.userId) return
-      const snapshot = await getDocs(query(collection(db, 'Favorite_Tracks'), where('user_id', '==', this.userId)))
-      this.favoriteTrackIds = snapshot.docs.map(docSnap => docSnap.data().track_id)
-    },
 
-    async fetchPlaylists () {
-      if (!this.userId) return
-      const snapshot = await getDocs(collection(db, 'Playlists'))
-      this.playlists = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(p => p.user_id === this.userId)
-    },
+      const favSnapshot = await getDocs(query(collection(db, 'Favorite_Tracks'), where('user_id', '==', this.userId)))
+      const trackIds = favSnapshot.docs.map(doc => doc.data().track_id)
+      this.favoriteTrackIds = [...trackIds]
+      const artistCache = {}
+      const tracks = await Promise.all(trackIds.map(async (id) => {
+        const trackDoc = await getDoc(doc(db, 'Track', id))
+        if (!trackDoc.exists()) return null
+        const trackData = trackDoc.data()
 
+        let artistName = 'Неизвестный'
+        if (trackData.artist_id) {
+          const artistKey = trackData.artist_id.path
+          if (artistCache[artistKey]) {
+            artistName = artistCache[artistKey]
+          } else {
+            const artistDoc = await getDoc(trackData.artist_id)
+            if (artistDoc.exists()) {
+              artistName = artistDoc.data().name || 'Неизвестный'
+              artistCache[artistKey] = artistName
+            }
+          }
+        }
+        return {
+          id: trackDoc.id,
+          track_id: trackDoc.id,
+          name: trackData.title || trackData.name || 'Без названия',
+          coverUrl: trackData.cover_url || '',
+          audioUrl: trackData.audio_file_url || '',
+          artist: artistName
+        }
+      }))
+      this.favoriteTracks = tracks.filter(Boolean)
+    },
     async addToPlaylist (playlistId) {
       if (!this.userId || !this.currentTrack) return
       try {
@@ -707,9 +799,20 @@ h1 {
   align-items: center;
 }
 
-.play-btn,
 .player-left .icon-btn,
-.player-right .icon-btn {
+.play-btn {
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin: 0 6px;
+  padding: 6px;
+  filter: brightness(0) invert(1);
+}
+
+.player-right .icon-btn,
+.play-btn {
   width: 40px;
   height: 40px;
   background: none;
@@ -747,16 +850,25 @@ h1 {
 }
 
 .progress {
-  background: #00ffff;
+  background: #00FFFF;
   height: 100%;
   width: 0%;
   border-radius: 2px;
 }
 
 .player-right {
+  display: flex;
+  align-items: flex-start;
   gap: 12px;
   min-width: 260px;
   height: 50px;
+}
+
+.player-right .cover {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
 }
 
 .player-right .info {
@@ -767,6 +879,17 @@ h1 {
   width: 180px;
   height: 1px;
   overflow: visible;
+}
+
+.player-right .artist,
+.player-right .title {
+  font-size: 14px;
+  color: #fff;
+  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  word-wrap: break-word;
+  margin: 0;
 }
 
 .player-right .title {
@@ -817,6 +940,8 @@ h1 {
 
 .volume-slider-vertical {
   writing-mode: bt-lr;
+  -webkit-appearance: slider-vertical;
+  -moz-appearance: slider-vertical;
   appearance: slider-vertical;
   width: 6px;
   height: 80px;
@@ -829,9 +954,8 @@ h1 {
   background: #b3b3b3;
 }
 
-.volume-slider-vertical::-webkit-slider-thumb,
-.volume-slider-vertical::-moz-range-thumb,
-.volume-slider-vertical::-ms-thumb {
+.volume-slider-vertical::-webkit-slider-thumb {
+  -webkit-appearance: none;
   height: 20px;
   width: 20px;
   background: #00bcd4;
@@ -840,9 +964,29 @@ h1 {
   transition: background 0.3s ease;
 }
 
-.volume-slider-vertical::-webkit-slider-thumb:hover,
+.volume-slider-vertical::-webkit-slider-thumb:hover {
+  background: #00a1b2;
+}
+
+.volume-slider-vertical::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  background: #00bcd4;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
 .volume-slider-vertical::-moz-range-thumb:hover {
   background: #00a1b2;
+}
+
+.volume-slider-vertical::-ms-thumb {
+  height: 20px;
+  width: 20px;
+  background: #00bcd4;
+  border-radius: 50%;
+  cursor: pointer;
 }
 
 .volume-slider-vertical::-ms-track {
