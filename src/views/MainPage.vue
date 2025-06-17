@@ -408,9 +408,9 @@ export default {
 
       const snapshot = await getDocs(query(collection(db, 'Favorite_Artists'), where('user_id', '==', userId)))
       const artistPromises = snapshot.docs.map(async (docSnap) => {
-        const artistRef = docSnap.data().artist_id
-        if (!artistRef) return null
-        const artistDoc = await getDoc(artistRef)
+        const artistId = docSnap.data().artist_id
+        if (!artistId) return null
+        const artistDoc = await getDoc(doc(db, 'Artist', artistId))
         if (!artistDoc.exists()) return null
         const artist = artistDoc.data()
         return {
