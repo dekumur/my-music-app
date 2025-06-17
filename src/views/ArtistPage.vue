@@ -6,12 +6,9 @@
       <div class="artist-info">
         <img :src="artist.photo_url || '/default-artist.png'" class="avatar" alt="Artist" />
         <h1>{{ artist.name }}</h1>
-        <i
-          :class="isFollowingArtist ? 'fas fa-heart followed' : 'far fa-heart'"
-          @click="toggleFollowArtist"
-          class="follow-icon"
-          title="Подписаться на исполнителя"
-        ></i>
+        <button @click="toggleFollow" class="follow-btn">
+          {{ isFollowing ? 'Отписаться' : 'Подписаться' }}
+        </button>
       </div>
       <div class="tabs">
         <button :class="{ active: activeTab === 'tracks' }" @click="activeTab = 'tracks'">Треки</button>
@@ -121,15 +118,6 @@
         </div>
       </div>
     </div>
-
-    <audio
-      ref="audio"
-      :src="currentTrack.audioUrl"
-      autoplay
-      @timeupdate="updateProgress"
-      @loadedmetadata="updateProgress"
-      @ended="onEnded"
-    ></audio>
   </div>
 
   <AppFooter />
@@ -149,19 +137,21 @@ export default {
       artist: null,
       tracks: [],
       activeTab: 'tracks',
-      currentTrack: null,
-      isPlaying: false,
       isRepeat: false,
-      isShuffle: false,
-      isFollowing: false,
+      favoriteTrackIds: [],
       showMenu: false,
       playlists: [],
+      showDropdown: false,
+      isFollowing: false,
+      isShuffle: false,
+      currentTrack: null,
       volume: 1,
+      audio: null,
+      showVolumeSlider: false,
+      isPlaying: false,
       progress: 0,
       currentTime: 0,
       duration: 0,
-      showVolumeSlider: false,
-      favoriteTrackIds: [],
       loading: true
     }
   },
@@ -174,15 +164,12 @@ export default {
     },
     isFavorite () {
       return this.currentTrack && this.favoriteTrackIds.includes(this.currentTrack.id)
-    },
-    isFollowingArtist () {
-      return this.isFollowing
     }
   },
   methods: {
     getUserId () {
       const auth = getAuth()
-      return auth.currentUser?.uid || null
+      return auth.currentUser ? auth.currentUser.uid : null
     },
     formatTime (seconds) {
       const mins = Math.floor(seconds / 60)
@@ -190,157 +177,13 @@ export default {
       return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
     },
     formatTrackName (name) {
-      return name?.replace(/[_-]/g, ' ') || ''
-    },
-    async loadArtistData () {
-      try {
-        const artistRef = doc(db, 'Artist', this.$route.params.id)
-        const artistDoc = await getDoc(artistRef)
-        if (!artistDoc.exists()) {
-          this.artist = null
-          return
-        }
-        this.artist = { id: artistDoc.id, ...artistDoc.data() }
-
-        const sampleTrack = await getDocs(collection(db, 'Track'))
-        const trackData = sampleTrack.docs[0]?.data()
-
-        let trackQuery
-        if (typeof trackData?.artist_id === 'string') {
-          trackQuery = query(collection(db, 'Track'), where('artist_id', '==', artistRef.id))
-        } else {
-          trackQuery = query(collection(db, 'Track'), where('artist_id', '==', artistRef))
-        }
-
-        const querySnapshot = await getDocs(trackQuery)
-        this.tracks = querySnapshot.docs.map(docSnap => {
-          const t = docSnap.data()
-          return {
-            id: docSnap.id,
-            title: t.title || t.name || 'Без названия',
-            cover_url: t.cover_url || '/default-cover.png',
-            audio_file_url: t.audio_file_url || '',
-            artist: this.artist.name
-          }
-        })
-      } catch (err) {
-        console.error('Ошибка загрузки артиста:', err)
-      } finally {
-        this.loading = false
-      }
-    },
-    async fetchFavoriteTracks () {
-      const userId = this.getUserId()
-      if (!userId) return
-      const favRef = collection(db, 'Favorite_Tracks')
-      const q = query(favRef, where('user_id', '==', userId))
-      const snapshot = await getDocs(q)
-      this.favoriteTrackIds = snapshot.docs.map(doc => doc.data().track_id)
-    },
-    async fetchPlaylists () {
-      const userId = this.getUserId()
-      if (!userId) return
-      const snapshot = await getDocs(collection(db, 'Playlists'))
-      this.playlists = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(p => p.user_id === userId)
-    },
-    updateProgress () {
-      const audio = this.$refs.audio
-      if (!audio) return
-      this.currentTime = audio.currentTime
-      this.duration = audio.duration
-      this.progress = (audio.currentTime / audio.duration) * 100
-    },
-    seek (event) {
-      const audio = this.$refs.audio
-      if (!audio || !audio.duration) return
-      const rect = event.currentTarget.getBoundingClientRect()
-      const clickX = event.clientX - rect.left
-      const ratio = clickX / rect.width
-      audio.currentTime = ratio * audio.duration
-    },
-    async playTrack (track) {
-      if (this.currentTrack?.id === track.id) {
-        this.togglePlayPause()
-        return
-      }
-
-      this.currentTrack = {
-        id: track.id,
-        name: track.title || track.name,
-        coverUrl: track.cover_url || '/default-cover.png',
-        audioUrl: track.audio_file_url,
-        artist: track.artist || 'Неизвестный'
-      }
-
-      this.$nextTick(() => {
-        const audio = this.$refs.audio
-        if (audio) {
-          audio.src = this.currentTrack.audioUrl
-          audio.load()
-          audio.volume = this.volume
-          audio.play()
-          this.isPlaying = true
-        }
-      })
-
-      await this.addToRecentlyPlayed(track.id)
-    },
-    togglePlayPause () {
-      const audio = this.$refs.audio
-      if (!audio) return
-      if (this.isPlaying) {
-        audio.pause()
-      } else {
-        audio.play()
-      }
-      this.isPlaying = !this.isPlaying
+      return name ? name.replace(/[_-]/g, ' ') : ''
     },
     toggleVolumeSlider () {
       this.showVolumeSlider = !this.showVolumeSlider
     },
-    updateVolume () {
-      const audio = this.$refs.audio
-      if (audio) {
-        audio.volume = this.volume
-      }
-    },
-    onEnded () {
-      if (this.isRepeat) {
-        this.$refs.audio.currentTime = 0
-        this.$refs.audio.play()
-        return
-      }
-      if (this.isShuffle) {
-        this.playRandomTrack()
-        return
-      }
-      this.nextTrack()
-    },
-    nextTrack () {
-      if (!this.currentTrack || !this.tracks.length) return
-      const currentIndex = this.tracks.findIndex(t => t.id === this.currentTrack.id)
-      const nextIndex = (currentIndex + 1) % this.tracks.length
-      this.playTrack(this.tracks[nextIndex])
-    },
-    prevTrack () {
-      if (!this.currentTrack || !this.tracks.length) return
-      const currentIndex = this.tracks.findIndex(t => t.id === this.currentTrack.id)
-      const prevIndex = (currentIndex - 1 + this.tracks.length) % this.tracks.length
-      this.playTrack(this.tracks[prevIndex])
-    },
-    playRandomTrack () {
-      const otherTracks = this.tracks.filter(t => t.id !== this.currentTrack?.id)
-      if (!otherTracks.length) return
-      const randomIndex = Math.floor(Math.random() * otherTracks.length)
-      this.playTrack(otherTracks[randomIndex])
-    },
-    toggleShuffle () {
-      this.isShuffle = !this.isShuffle
-    },
-    toggleRepeat () {
-      this.isRepeat = !this.isRepeat
+    toggleDropdown () {
+      this.showMenu = !this.showMenu
     },
     async toggleFavorite () {
       const userId = this.getUserId()
@@ -364,38 +207,97 @@ export default {
         this.favoriteTrackIds.push(trackId)
       }
     },
-    async fetchFollowingStatus () {
-      const userId = this.getUserId()
-      if (!userId || !this.artist) return
-      const q = query(
-        collection(db, 'Artist_Followers'),
-        where('user_id', '==', userId),
-        where('artist_id', '==', this.artist.id)
-      )
-      const snapshot = await getDocs(q)
-      this.isFollowing = !snapshot.empty
+    async playTrack (track) {
+      if (!this.audio) {
+        this.audio = new Audio()
+        this.audio.addEventListener('timeupdate', this.updateProgress)
+        this.audio.addEventListener('ended', this.onEnded)
+      }
+
+      if (this.currentTrack && this.currentTrack.id === track.id) {
+        this.audio.pause()
+        this.isPlaying = false
+        this.currentTrack = null
+        return
+      }
+
+      this.currentTrack = {
+        id: track.id,
+        name: track.title || track.name,
+        coverUrl: track.cover_url || '/default-cover.png',
+        audioUrl: track.audio_file_url,
+        artist: track.artist || 'Неизвестный'
+      }
+
+      this.audio.src = this.currentTrack.audioUrl
+      this.audio.load()
+      this.audio.play()
+      this.isPlaying = true
+      this.updateVolume()
+
+      await this.addToRecentlyPlayed(track.id)
     },
-    async toggleFollowArtist () {
-      const userId = this.getUserId()
-      if (!userId || !this.artist) return
+    togglePlayPause () {
+      if (!this.audio) return
+      this.isPlaying ? this.audio.pause() : this.audio.play()
+      this.isPlaying = !this.isPlaying
+    },
+    updateProgress () {
+      if (!this.audio) return
+      this.currentTime = this.audio.currentTime
+      this.duration = this.audio.duration
+      this.progress = (this.currentTime / this.duration) * 100
+    },
+    seek (event) {
+      if (!this.audio || !this.audio.duration) return
+      const rect = event.currentTarget.getBoundingClientRect()
+      const clickX = event.clientX - rect.left
+      const ratio = clickX / rect.width
+      this.audio.currentTime = ratio * this.audio.duration
+    },
+    onEnded () {
+      if (this.isRepeat) {
+        this.audio.currentTime = 0
+        this.audio.play()
+        return
+      }
 
-      const q = query(
-        collection(db, 'Artist_Followers'),
-        where('user_id', '==', userId),
-        where('artist_id', '==', this.artist.id)
-      )
-      const snapshot = await getDocs(q)
+      if (this.isShuffle) {
+        this.playRandomTrack()
+        return
+      }
 
-      if (!snapshot.empty) {
-        await deleteDoc(doc(db, 'Artist_Followers', snapshot.docs[0].id))
-        this.isFollowing = false
-      } else {
-        await addDoc(collection(db, 'Artist_Followers'), {
-          user_id: userId,
-          artist_id: this.artist.id,
-          followed_at: serverTimestamp()
-        })
-        this.isFollowing = true
+      this.nextTrack()
+    },
+    nextTrack () {
+      if (!this.currentTrack || !this.tracks.length) return
+
+      const currentIndex = this.tracks.findIndex(t => t.id === this.currentTrack.id)
+      const nextIndex = (currentIndex + 1) % this.tracks.length
+      this.playTrack(this.tracks[nextIndex])
+    },
+    prevTrack () {
+      if (!this.currentTrack || !this.tracks.length) return
+
+      const currentIndex = this.tracks.findIndex(t => t.id === this.currentTrack.id)
+      const prevIndex = (currentIndex - 1 + this.tracks.length) % this.tracks.length
+      this.playTrack(this.tracks[prevIndex])
+    },
+    playRandomTrack () {
+      const otherTracks = this.tracks.filter(t => t.id !== this.currentTrack?.id)
+      if (otherTracks.length === 0) return
+      const randomIndex = Math.floor(Math.random() * otherTracks.length)
+      this.playTrack(otherTracks[randomIndex])
+    },
+    toggleShuffle () {
+      this.isShuffle = !this.isShuffle
+    },
+    toggleRepeat () {
+      this.isRepeat = !this.isRepeat
+    },
+    updateVolume () {
+      if (this.audio) {
+        this.audio.volume = this.volume
       }
     },
     async addToRecentlyPlayed (trackId) {
@@ -409,7 +311,8 @@ export default {
 
         if (!snapshot.empty) {
           const docId = snapshot.docs[0].id
-          await setDoc(doc(db, 'Listening_History', docId), {
+          const docRef = doc(db, 'Listening_History', docId)
+          await setDoc(docRef, {
             user_id: userId,
             track_id: trackId,
             played_at: serverTimestamp()
@@ -427,7 +330,8 @@ export default {
           })
           tracks.sort((a, b) => (a.played_at?.seconds || 0) - (b.played_at?.seconds || 0))
           const oldest = tracks[0]
-          await setDoc(doc(db, 'Listening_History', oldest.id), {
+          const oldestRef = doc(db, 'Listening_History', oldest.id)
+          await setDoc(oldestRef, {
             user_id: userId,
             track_id: trackId,
             played_at: serverTimestamp()
@@ -440,20 +344,107 @@ export default {
           track_id: trackId,
           played_at: serverTimestamp()
         })
-      } catch (e) {
-        console.error('Ошибка истории прослушивания:', e)
+      } catch (error) {
+        console.error('Ошибка при сохранении истории:', error)
+      }
+    },
+    async loadArtistData () {
+      try {
+        const artistRef = doc(db, 'Artist', this.$route.params.id)
+        const artistDoc = await getDoc(artistRef)
+        if (!artistDoc.exists()) {
+          console.warn('Артист не найден')
+          this.artist = null
+          return
+        }
+        this.artist = { id: artistDoc.id, ...artistDoc.data() }
+
+        const sampleTrack = await getDocs(collection(db, 'Track'))
+        const trackData = sampleTrack.docs[0]?.data()
+        console.log('Пример artist_id в треке:', trackData?.artist_id)
+
+        let trackQuery
+        if (typeof trackData?.artist_id === 'string') {
+          trackQuery = query(collection(db, 'Track'), where('artist_id', '==', artistRef.id))
+        } else {
+          trackQuery = query(collection(db, 'Track'), where('artist_id', '==', artistRef))
+        }
+
+        const querySnapshot = await getDocs(trackQuery)
+        console.log('Найдено треков:', querySnapshot.size)
+
+        const loaded = querySnapshot.docs.map(docSnap => {
+          const t = docSnap.data()
+          return {
+            id: docSnap.id,
+            title: t.title || t.name || 'Без названия',
+            cover_url: t.cover_url || '/default-cover.png',
+            audio_file_url: t.audio_file_url || '',
+            artist: this.artist.name
+          }
+        })
+        this.tracks = loaded
+      } catch (err) {
+        console.error('Ошибка loadArtistData:', err)
+      } finally {
+        this.loading = false
+      }
+    },
+    async fetchPlaylists () {
+      const userId = this.getUserId()
+      if (!userId) return
+      const snapshot = await getDocs(collection(db, 'Playlists'))
+      this.playlists = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(p => p.user_id === userId)
+    },
+    async checkIfFollowing () {
+      const userId = this.getUserId()
+      if (!userId || !this.artist?.id) return
+
+      const favRef = collection(db, 'Favorite_Artists')
+      const q = query(favRef, where('user_id', '==', userId), where('artist_id', '==', this.artist.id))
+      const snapshot = await getDocs(q)
+
+      this.isFollowing = !snapshot.empty
+    },
+    async toggleFollow () {
+      const userId = this.getUserId()
+      if (!userId || !this.artist?.id) return
+
+      const favRef = collection(db, 'Favorite_Artists')
+      const q = query(favRef, where('user_id', '==', userId), where('artist_id', '==', this.artist.id))
+      const snapshot = await getDocs(q)
+
+      if (!snapshot.empty) {
+        // Уже подписан — отписываемся
+        const docId = snapshot.docs[0].id
+        await deleteDoc(doc(db, 'Favorite_Artists', docId))
+        this.isFollowing = false
+      } else {
+        // Не подписан — подписываемся
+        await addDoc(favRef, {
+          user_id: userId,
+          artist_id: this.artist.id,
+          followed_at: serverTimestamp()
+        })
+        this.isFollowing = true
       }
     },
     async addToPlaylist (playlistId) {
-      const userId = this.getUserId()
-      if (!userId || !this.currentTrack) return
-      const trackRef = doc(db, 'Playlists', playlistId, 'Tracks', this.currentTrack.id)
-      await setDoc(trackRef, {
-        ...this.currentTrack,
-        addedAt: Date.now(),
-        user_id: userId
-      })
-      this.showMenu = false
+      try {
+        const userId = this.getUserId()
+        if (!userId || !this.currentTrack) return
+        const trackRef = doc(db, 'Playlists', playlistId, 'Tracks', this.currentTrack.id)
+        await setDoc(trackRef, {
+          ...this.currentTrack,
+          addedAt: Date.now(),
+          user_id: userId
+        })
+        this.showMenu = false
+      } catch (error) {
+        console.error('Ошибка при добавлении трека в плейлист:', error)
+      }
     },
     async createNewPlaylist () {
       const name = prompt('Введите имя нового плейлиста:')
@@ -466,27 +457,38 @@ export default {
       })
       await this.addToPlaylist(newDoc.id)
       await this.fetchPlaylists()
+    },
+    async fetchFavoriteTracks () {
+      try {
+        const userId = this.getUserId()
+        if (!userId) return
+
+        const favRef = collection(db, 'Favorite_Tracks')
+        const q = query(favRef, where('user_id', '==', userId))
+        const snapshot = await getDocs(q)
+
+        this.favoriteTrackIds = snapshot.docs.map(docSnap => docSnap.data().track_id)
+      } catch (error) {
+        console.error('Ошибка при получении избранных треков:', error)
+      }
     }
   },
-  mounted () {
-    this.loadArtistData()
-    this.fetchFavoriteTracks()
-    this.fetchPlaylists()
-    this.fetchFollowingStatus()
+  async mounted () {
+    this.audio = new Audio()
+    this.audio.addEventListener('timeupdate', this.updateProgress)
+    this.audio.addEventListener('ended', this.onEnded)
+    this.audio.volume = this.volume
 
-    const audio = this.$refs.audio
-    if (audio) {
-      audio.addEventListener('timeupdate', this.updateProgress)
-      audio.addEventListener('ended', this.onEnded)
-      audio.volume = this.volume
-    }
+    await this.loadArtistData()
+    await this.checkIfFollowing()
+    await this.fetchFavoriteTracks()
+    await this.fetchPlaylists()
   },
   beforeUnmount () {
-    const audio = this.$refs.audio
-    if (audio) {
-      audio.removeEventListener('timeupdate', this.updateProgress)
-      audio.removeEventListener('ended', this.onEnded)
-      audio.pause()
+    if (this.audio) {
+      this.audio.removeEventListener('timeupdate', this.updateProgress)
+      this.audio.removeEventListener('ended', this.onEnded)
+      this.audio.pause()
     }
   }
 }
@@ -876,18 +878,25 @@ p {
 .dropdown-menu li:hover {
   background-color: #242424;
 }
-.follow-icon {
-  font-size: 1.5rem;
+
+.follow-btn {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: transparent;
+  border: 2px solid #fffdfd;
   cursor: pointer;
-  transition: color 0.3s ease;
-  color: #aaa;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.follow-icon:hover {
-  color: #e74c3c;
+.follow-btn:hover {
+  background-color: #333;
+  color: white;
 }
 
-.followed {
-  color: #e74c3c;
+.follow-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(51, 51, 51, 0.3);
 }
 </style>

@@ -9,10 +9,9 @@
       </div>
     </div>
     <div class="right-section">
-      <a href="#" class="active">Главная</a>
-      <a href="#">Библиотека</a>
+      <router-link to="/main" class="active">Главная</router-link>
+      <router-link to="/library">Библиотека</router-link>
       <img src="../assets/images/path.png" alt="logo">
-      <!-- Кнопка выхода -->
       <button @click="logout" class="logout-button">Выход</button>
     </div>
   </header>
