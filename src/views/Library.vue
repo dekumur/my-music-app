@@ -10,6 +10,7 @@
     </div>
 
     <section v-if="Array.isArray(recentTracks) && recentTracks.length" class="recently_dried">
+        <h1>Недавно прослушано </h1>
         <Splide :options="splideOptions">
           <SplideSlide
             v-for="track in recentTracks"
@@ -25,6 +26,7 @@
     </section>
 
       <section class="recently_dried">
+        <h1>Избранные</h1>
       <Splide v-if="Array.isArray(favoriteArtists) && favoriteArtists.length" :options="splideOptions">
         <SplideSlide
           v-for="artist in favoriteArtists"
