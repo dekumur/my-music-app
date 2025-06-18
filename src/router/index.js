@@ -5,6 +5,7 @@ import MainPage from '@/views/MainPage.vue'
 import ArtistPage from '@/views/ArtistPage.vue'
 import LibraryPage from '@/views/Library.vue'
 import PlaylistPage from '@/views/PlaylistPage.vue'
+import ProfilePage from '@/views/ProfilePage.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: HomePage },
@@ -12,7 +13,8 @@ const routes = [
   { path: '/main', name: 'Main', component: MainPage },
   { path: '/artist/:id', name: 'ArtistPage', component: ArtistPage },
   { path: '/library', name: 'LibraryPage', component: LibraryPage },
-  { path: '/playlist/:id', name: 'PlaylistPage', component: PlaylistPage }
+  { path: '/playlist/:id', name: 'PlaylistPage', component: PlaylistPage }, 
+    { path: 'profile', name: 'ProfilePage', component: ProfilePage }
 ]
 
 const router = createRouter({

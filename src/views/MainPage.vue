@@ -232,6 +232,9 @@ export default {
     },
     toggleShuffle () {
       this.isShuffle = !this.isShuffle
+      if (this.isShuffle && this.currentTrack) {
+        this.playRandomTrack()
+      }
     },
     toggleRepeat () {
       this.isRepeat = !this.isRepeat
@@ -268,22 +271,38 @@ export default {
       this.isShuffle ? this.playRandomTrack() : this.nextTrack()
     },
     nextTrack () {
-      if (!this.currentTrack || !this.recommendations.length) return
-      const currentIndex = this.recommendations.findIndex(t => t.id === this.currentTrack.id)
-      const nextIndex = (currentIndex + 1) % this.recommendations.length
-      this.playTrack(this.recommendations[nextIndex])
+      if (!this.currentTrack || !this.tracks.length) return
+      if (this.isShuffle) {
+        this.playRandomTrack()
+      } else {
+        const currentIndex = this.tracks.findIndex((t) => t.id === this.currentTrack.id)
+        const nextIndex = (currentIndex + 1) % this.tracks.length
+        this.playTrack(this.tracks[nextIndex])
+      }
     },
     prevTrack () {
-      if (!this.currentTrack || !this.recommendations.length) return
-      const currentIndex = this.recommendations.findIndex(t => t.id === this.currentTrack.id)
-      const prevIndex = (currentIndex - 1 + this.recommendations.length) % this.recommendations.length
-      this.playTrack(this.recommendations[prevIndex])
+      if (!this.currentTrack || !this.tracks.length) return
+      if (this.isShuffle) {
+        this.playRandomTrack()
+      } else {
+        const currentIndex = this.tracks.findIndex((t) => t.id === this.currentTrack.id)
+        const prevIndex = (currentIndex - 1 + this.tracks.length) % this.tracks.length
+        this.playTrack(this.tracks[prevIndex])
+      }
     },
     playRandomTrack () {
-      const otherTracks = this.recommendations.filter(t => t.id !== this.currentTrack?.id)
-      if (!otherTracks.length) return
-      const randomIndex = Math.floor(Math.random() * otherTracks.length)
-      this.playTrack(otherTracks[randomIndex])
+      if (!this.tracks.length) return
+      if (this.tracks.length === 1) {
+        this.playTrack(this.tracks[0])
+        return
+      }
+      let availableTracks = this.tracks.filter((t) => t.id !== this.currentTrack?.id)
+
+      if (availableTracks.length === 0) {
+        availableTracks = [...this.tracks]
+      }
+      const randomIndex = Math.floor(Math.random() * availableTracks.length)
+      this.playTrack(availableTracks[randomIndex])
     },
     async playTrack (track) {
       if (this.audio) this.audio.pause()

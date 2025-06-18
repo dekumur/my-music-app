@@ -270,26 +270,43 @@ export default {
     },
     nextTrack () {
       if (!this.currentTrack || !this.tracks.length) return
-
-      const currentIndex = this.tracks.findIndex(t => t.id === this.currentTrack.id)
-      const nextIndex = (currentIndex + 1) % this.tracks.length
-      this.playTrack(this.tracks[nextIndex])
+      if (this.isShuffle) {
+        this.playRandomTrack()
+      } else {
+        const currentIndex = this.tracks.findIndex((t) => t.id === this.currentTrack.id)
+        const nextIndex = (currentIndex + 1) % this.tracks.length
+        this.playTrack(this.tracks[nextIndex])
+      }
     },
     prevTrack () {
       if (!this.currentTrack || !this.tracks.length) return
-
-      const currentIndex = this.tracks.findIndex(t => t.id === this.currentTrack.id)
-      const prevIndex = (currentIndex - 1 + this.tracks.length) % this.tracks.length
-      this.playTrack(this.tracks[prevIndex])
+      if (this.isShuffle) {
+        this.playRandomTrack()
+      } else {
+        const currentIndex = this.tracks.findIndex((t) => t.id === this.currentTrack.id)
+        const prevIndex = (currentIndex - 1 + this.tracks.length) % this.tracks.length
+        this.playTrack(this.tracks[prevIndex])
+      }
     },
     playRandomTrack () {
-      const otherTracks = this.tracks.filter(t => t.id !== this.currentTrack?.id)
-      if (otherTracks.length === 0) return
-      const randomIndex = Math.floor(Math.random() * otherTracks.length)
-      this.playTrack(otherTracks[randomIndex])
+      if (!this.tracks.length) return
+      if (this.tracks.length === 1) {
+        this.playTrack(this.tracks[0])
+        return
+      }
+      let availableTracks = this.tracks.filter((t) => t.id !== this.currentTrack?.id)
+
+      if (availableTracks.length === 0) {
+        availableTracks = [...this.tracks]
+      }
+      const randomIndex = Math.floor(Math.random() * availableTracks.length)
+      this.playTrack(availableTracks[randomIndex])
     },
     toggleShuffle () {
       this.isShuffle = !this.isShuffle
+      if (this.isShuffle && this.currentTrack) {
+        this.playRandomTrack()
+      }
     },
     toggleRepeat () {
       this.isRepeat = !this.isRepeat
