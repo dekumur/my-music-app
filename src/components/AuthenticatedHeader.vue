@@ -11,7 +11,7 @@
     <div class="right-section">
       <router-link to="/main" class="active">Главная</router-link>
       <router-link to="/library">Библиотека</router-link>
-      <img src="../assets/images/path.png" alt="logo">
+      <router-link to="/profile"><img src="../assets/images/path.png" alt="logo"></router-link>
       <button @click="logout" class="logout-button">Выход</button>
     </div>
   </header>

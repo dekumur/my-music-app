@@ -13,8 +13,8 @@ const routes = [
   { path: '/main', name: 'Main', component: MainPage },
   { path: '/artist/:id', name: 'ArtistPage', component: ArtistPage },
   { path: '/library', name: 'LibraryPage', component: LibraryPage },
-  { path: '/playlist/:id', name: 'PlaylistPage', component: PlaylistPage }, 
-    { path: 'profile', name: 'ProfilePage', component: ProfilePage }
+  { path: '/playlist/:id', name: 'PlaylistPage', component: PlaylistPage },
+  { path: '/profile', name: 'ProfilePage', component: ProfilePage }
 ]
 
 const router = createRouter({

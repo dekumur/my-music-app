@@ -1,6 +1,5 @@
 <template>
   <div class="profile-page">
-    <!-- Верхняя часть -->
     <div class="profile-header">
       <img class="background" src="/bg.jpg" alt="background" />
       <div class="profile-info">
@@ -8,8 +7,6 @@
         <div class="username">{{ username }}</div>
       </div>
     </div>
-
-    <!-- Нижняя часть -->
     <div class="profile-form">
       <div class="form-avatar">
         <img class="avatar" :src="avatarUrl" alt="Avatar" />
@@ -31,10 +28,10 @@
 
 <script>
 export default {
-  data() {
+  data () {
     return {
       username: 'Sussy baka',
-      avatarUrl: '/minion.jpg', // можно заменить на реальную ссылку
+      avatarUrl: '/minion.jpg',
       form: {
         name: '',
         email: '',
@@ -44,14 +41,13 @@ export default {
     }
   },
   methods: {
-    onFileChange(e) {
+    onFileChange (e) {
       const file = e.target.files[0]
       if (file) {
         this.avatarUrl = URL.createObjectURL(file)
       }
     },
-    submitForm() {
-      // валидация и отправка данных
+    submitForm () {
       console.log(this.form)
     }
   }
