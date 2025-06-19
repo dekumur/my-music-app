@@ -1,4 +1,7 @@
 <template>
+  <div v-if="showAlert" :class="['alert-box', alertType]">
+    {{ alertMessage }}
+  </div>
   <div class="forgot_password-container">
     <form @submit.prevent="resetPassword">
       <h2>Восстановление пароля</h2>
@@ -20,7 +23,10 @@ export default {
   name: 'ForgotPassword',
   data () {
     return {
-      email: ''
+      email: '',
+      showAlert: false,
+      alertMessage: '',
+      alertType: ''
     }
   },
   methods: {
@@ -28,12 +34,20 @@ export default {
       const auth = getAuth()
       sendPasswordResetEmail(auth, this.email)
         .then(() => {
-          alert('Письмо с восстановлением отправлено на почту.')
+          this.showCustomAlert('Письмо с восстановлением отправлено на почту.', 'success')
           this.$emit('switch-to-login')
         })
         .catch((error) => {
-          alert('Ошибка: ' + error.message)
+          this.showCustomAlert('Ошибка: ' + error.message, 'error')
         })
+    },
+    showCustomAlert (message, type) {
+      this.alertMessage = message
+      this.alertType = type
+      this.showAlert = true
+      setTimeout(() => {
+        this.showAlert = false
+      }, 4000)
     }
   },
   emits: ['switch-to-login']
@@ -94,5 +108,33 @@ a {
 
 a:hover {
   text-decoration: none;
+}
+
+.alert-box {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 15px 25px;
+  border-radius: 10px;
+  z-index: 9999;
+  font-weight: bold;
+  font-size: 16px;
+  color: white;
+  animation: fadeInOut 4s ease forwards;
+}
+
+.alert-box.success {
+  background-color: #5fcacf;
+}
+
+.alert-box.error {
+  background-color: #dc3545;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  10%, 90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
 }
 </style>

@@ -1,7 +1,6 @@
 <template>
   <div class="profile-page">
     <div class="profile-header">
-      <img class="background" src="/bg.jpg" alt="background" />
       <div class="profile-info">
         <img class="avatar" :src="avatarUrl" alt="Avatar" />
         <div class="username">{{ username }}</div>

@@ -654,7 +654,7 @@ body {
 }
 
 .tabs {
-  margin: 20px 0 12px;
+  margin: 50px 200px 12px;
   display: flex;
   gap: 12px;
 }

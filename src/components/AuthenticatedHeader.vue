@@ -5,7 +5,12 @@
     </div>
     <div class="middle-section">
       <div class="search-container">
-        <input type="text" id="music-search" placeholder="Поиск" class="search-input" autocomplete="off" onkeyup="searchMusic()" />
+        <input type="text"
+        v-model="searchQuery"
+        placeholder="Поиск"
+        class="search-input"
+        autocomplete="off"
+        @input="handleSearch" />
       </div>
     </div>
     <div class="right-section">
@@ -23,6 +28,11 @@ import { auth } from '@/assets/js/firebase'
 
 export default {
   name: 'AuthenticatedHeader',
+  data () {
+    return {
+      searchQuery: ''
+    }
+  },
   methods: {
     async logout () {
       try {
@@ -34,6 +44,10 @@ export default {
     },
     goHome () {
       this.$router.push('/main')
+    },
+    handleSearch () {
+      this.$emit('search', this.searchQuery)
+      this.$router.push({ name: 'search', query: { q: this.searchQuery } })
     }
   }
 }
