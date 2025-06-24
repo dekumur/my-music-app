@@ -14,7 +14,7 @@
         <button @click="goToPopular">Популярное сейчас</button>
       </section>
       <section class="third_section">
-        <h1>Откройте для себя то, что сейчас слушают все</h1>
+        <h1>Узнайте, что слушает весь мир сейчас</h1>
           <div class="photo_artist">
             <div class="artist">
               <img class="one" src="../assets/images/1.png" alt="1">

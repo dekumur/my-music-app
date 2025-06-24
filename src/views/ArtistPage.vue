@@ -6,7 +6,9 @@
         <img :src="artist.photo_url || '/default-artist.png'" class="avatar" alt="Artist" />
         <h1>{{ artist.name }}</h1>
         <button @click="toggleFollow" class="follow-btn">
-          {{ isFollowing ? 'Отписаться' : 'Подписаться' }}
+          <span :key="isFollowing ? 'follow' : 'unfollow'">
+            <i :class="isFollowing ? 'fas fa-user-minus' : 'fas fa-user-plus'"></i>
+          </span>
         </button>
       </div>
       <div class="tabs">
@@ -138,10 +140,10 @@ export default {
       activeTab: 'tracks',
       isRepeat: false,
       favoriteTrackIds: [],
+      isFollowing: false,
       showMenu: false,
       playlists: [],
       showDropdown: false,
-      isFollowing: false,
       isShuffle: false,
       currentTrack: null,
       volume: 1,
@@ -433,12 +435,10 @@ export default {
       const snapshot = await getDocs(q)
 
       if (!snapshot.empty) {
-        // Уже подписан — отписываемся
         const docId = snapshot.docs[0].id
         await deleteDoc(doc(db, 'Favorite_Artists', docId))
         this.isFollowing = false
       } else {
-        // Не подписан — подписываемся
         await addDoc(favRef, {
           user_id: userId,
           artist_id: this.artist.id,
@@ -446,6 +446,7 @@ export default {
         })
         this.isFollowing = true
       }
+      console.log('Текущий статус подписки:', this.isFollowing)
     },
     async addToPlaylist (playlistId) {
       try {
@@ -896,23 +897,22 @@ p {
 }
 
 .follow-btn {
-  padding: 8px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #ffffff;
   background-color: transparent;
-  border: 2px solid #fffdfd;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 20px;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  margin-top: 20px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-.follow-btn:hover {
-  background-color: #333;
-  color: white;
+.follow-btn i {
+  font-size: 18px;
+  transition: transform 0.2s;
 }
 
-.follow-btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(51, 51, 51, 0.3);
-}
 </style>

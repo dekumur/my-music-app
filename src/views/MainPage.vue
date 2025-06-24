@@ -163,6 +163,7 @@ export default {
   components: { Splide, SplideSlide, AppFooter },
   data () {
     return {
+      tracks: [],
       recommendations: [],
       recentTracks: [],
       favoriteArtists: [],
@@ -508,6 +509,7 @@ export default {
       await this.fetchRecentlyPlayed()
       await this.fetchFavoriteArtists()
       await this.fetchPlaylists()
+      this.tracks = tracksWithArtists
     } catch (error) {
       console.error('Ошибка при загрузке данных:', error)
     } finally {

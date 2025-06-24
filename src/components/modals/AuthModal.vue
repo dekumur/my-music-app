@@ -54,6 +54,7 @@ export default {
       this.$emit('close-forgot-password')
     },
     switchToLogin () {
+      this.$emit('open-login')
       this.$emit('close-register')
     },
     switchToRegister () {

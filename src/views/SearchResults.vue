@@ -2,12 +2,12 @@
   <div>
     <h1>Результаты поиска для: "{{ searchTerm }}"</h1>
     <div v-if="loading">Загрузка...</div>
-    <ul v-if="results.length > 0">
-      <li v-for="(track, index) in results" :key="index">
-        {{ track.title || 'Без названия' }} — {{ track.artist || 'Без артиста' }}
-      </li>
-    </ul>
-
+    <div v-if="results.length > 0" class="search-results">
+      <div v-for="(track, index) in results" :key="index" class="slide-content hoverable">
+            <img :src="track.coverUrl" :alt="formatTrackName(track.name)" />
+            <p>{{ formatTrackName(track.name) }}</p>
+      </div>
+    </div>
     <div v-else-if="!loading && searchTerm">
       Ничего не найдено
     </div>
@@ -31,56 +31,78 @@ export default {
     '$route.query.q': {
       immediate: true,
       handler (newQuery) {
-        console.log('🚀 Новый поисковый запрос:', newQuery)
         this.searchTerm = newQuery || ''
         this.performSearch(this.searchTerm)
       }
     }
   },
   methods: {
+    formatTrackName (name) {
+      if (!name) return 'Без названия'
+      // Ваша логика форматирования названия трека
+      return name
+    },
     async performSearch (queryText) {
       if (!queryText) {
-        console.log('⛔ Пустой поисковый запрос')
         this.results = []
         return
       }
 
       this.loading = true
-      this.results = []
 
       try {
-        console.log('🔍 Выполняется поиск для:', queryText)
-
         const tracksRef = collection(db, 'Track')
         const snapshot = await getDocs(tracksRef)
-
-        console.log('📦 Получено документов из коллекции Track:', snapshot.size)
-
         const lowerQuery = queryText.toLowerCase()
+        const matched = []
 
         snapshot.forEach(doc => {
           const data = doc.data()
-          console.log('📝 Документ:', data)
-
-          const title = (data.title || '').toLowerCase()
+          const title = (data.title || data.name || '').toLowerCase()
           const artist = (data.artist || '').toLowerCase()
 
           if (title.includes(lowerQuery) || artist.includes(lowerQuery)) {
-            console.log('✅ Совпадение найдено:', data)
-            this.results.push(data)
+            matched.push({
+              ...data,
+              // Для совместимости с обоими вариантами названий
+              name: data.name || data.title,
+              coverUrl: data.coverUrl || data.cover || '/default-cover.png'
+            })
           }
         })
 
-        if (this.results.length === 0) {
-          console.log('⚠️ Совпадений не найдено')
-        }
+        this.results = matched
       } catch (err) {
-        console.error('❌ Ошибка при поиске:', err)
+        console.error('Ошибка при поиске:', err)
+        this.results = []
       } finally {
         this.loading = false
-        console.log('🔚 Поиск завершён. Найдено результатов:', this.results.length)
       }
     }
   }
 }
 </script>
+
+<style scoped>
+.search-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.slide-content {
+  text-align: center;
+}
+
+.slide-content img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.slide-content p {
+  margin-top: 8px;
+  font-size: 14px;
+}
+</style>
